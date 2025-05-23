@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "target": "ESNext", // ESNext: compile target, features mới nhất
+    "lib": [
+      "ESNext",
+      "DOM"
+    ], // libraries: ESNext và DOM API
+    "emitDecoratorMetadata": true, // emit metadata cho decorators
+    "experimentalDecorators": true, // bật decorators thử nghiệm
+    "rootDir": "./src", // thư mục gốc chứa TS
+    "module": "ESNext", // module system ESNext
+    "moduleResolution": "Node", // giải module kiểu Node.js
+    "resolveJsonModule": true, // import file JSON
+    "strict": true, // bật strict mode (all strict checks)
+    "strictBindCallApply": true, // kiểm tra bind/call/apply
+    "strictFunctionTypes": true, // kiểm tra kiểu hàm
+    "strictNullChecks": true, // kiểm tra null/undefined
+    "strictPropertyInitialization": true, // bắt buộc init tất cả property
+    "alwaysStrict": true, // thêm 'use strict'
+    "noImplicitAny": true, // cấm any ngầm
+    "noImplicitReturns": true, // buộc return ở mọi nhánh
+    "noImplicitThis": true, // cấm this không rõ kiểu
+    "noUnusedLocals": true, // lỗi biến không dùng
+    "noUnusedParameters": true, // lỗi param không dùng
+    "noEmit": true, // chỉ kiểm type, không emit JS
+    "sourceMap": true, // sinh source map để debug
+    "esModuleInterop": true, // hỗ trợ import default từ CommonJS
+    "forceConsistentCasingInFileNames": true // nhất quán tên file
+  },
+  "include": [
+    "src/**/*"
+  ], // include thư mục src
+  "exclude": [
+    "**/*.test.ts", // loại bỏ file test
+    "test/**", // loại bỏ folder test
+    "node_modules", // loại bỏ node_modules
+    "dist" // loại bỏ thư mục build
+  ]
+}
