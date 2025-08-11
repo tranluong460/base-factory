@@ -1,3 +1,4 @@
-export * from './PluginLoader'
-export * from './ProviderFacade'
-export * from './ProviderRegistry'
+export * from './ProjectLogger'
+export * from './ProjectPluginLoader'
+export * from './ProjectProviderFacade'
+export * from './ProjectProviderRegistry'
