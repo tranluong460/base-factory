@@ -1,4 +1,4 @@
-export interface IProjectLogger {
+export interface IFacebookLogger {
   log: (...args: any[]) => void
   warn: (...args: any[]) => void
   error: (...args: any[]) => void
@@ -6,7 +6,7 @@ export interface IProjectLogger {
   debug: (...args: any[]) => void
 }
 
-export interface IProjectLoggerOption {
-  logger?: IProjectLogger
+export interface IFacebookLoggerOption {
+  logger?: IFacebookLogger
   debug?: boolean
 }

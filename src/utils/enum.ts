@@ -1,3 +1,4 @@
-export enum EnumProjectProvider {
-  NAME = 'name',
+export enum EnumFacebookProvider {
+  WWW = 'www',
+  BUSINESS = 'business',
 }

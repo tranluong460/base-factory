@@ -1,9 +1,9 @@
-import type { EnumProjectProvider } from '../utils'
-import { ProjectLogger } from './ProjectLogger'
+import type { EnumFacebookProvider } from '../utils'
+import { FacebookLogger } from './FacebookLogger'
 
-export class ProjectPluginLoader {
-  static async loadPlugin(providerId: EnumProjectProvider): Promise<void> {
-    const logger = ProjectLogger.getInstance()
+export class FacebookPluginLoader {
+  static async loadPlugin(providerId: EnumFacebookProvider): Promise<void> {
+    const logger = FacebookLogger.getInstance()
     try {
       const plugin = await import(`../providers/${providerId}/index.ts`)
       if (plugin.register) {

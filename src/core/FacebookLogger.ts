@@ -1,20 +1,20 @@
-import type { IProjectLogger, IProjectLoggerOption } from '../interfaces'
+import type { IFacebookLogger, IFacebookLoggerOption } from '../interfaces'
 
-export class ProjectLogger {
-  private static instance: ProjectLogger
-  private readonly loggerApi: IProjectLogger
+export class FacebookLogger {
+  private static instance: FacebookLogger
+  private readonly loggerApi: IFacebookLogger
   private isDebug = false
 
-  private constructor(loggerOptions?: IProjectLoggerOption) {
+  private constructor(loggerOptions?: IFacebookLoggerOption) {
     this.loggerApi = loggerOptions?.logger ?? console
     this.isDebug = loggerOptions?.debug ?? false
   }
 
-  public static getInstance(loggerOptions?: IProjectLoggerOption): ProjectLogger {
-    if (!ProjectLogger.instance) {
-      ProjectLogger.instance = new ProjectLogger(loggerOptions)
+  public static getInstance(loggerOptions?: IFacebookLoggerOption): FacebookLogger {
+    if (!FacebookLogger.instance) {
+      FacebookLogger.instance = new FacebookLogger(loggerOptions)
     }
-    return ProjectLogger.instance
+    return FacebookLogger.instance
   }
 
   private formatArgsForWinston(message: string, args: any[]): string {

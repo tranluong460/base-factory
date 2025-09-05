@@ -1,3 +1,3 @@
-export * from './IProjectLogger'
-export * from './IProjectProvider'
-export * from './IProjectProviderFactory'
+export * from './IFacebookLogger'
+export * from './IFacebookProvider'
+export * from './IFacebookProviderFactory'
