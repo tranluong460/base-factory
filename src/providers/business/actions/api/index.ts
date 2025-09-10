@@ -1,10 +1,10 @@
-import { FacebookLogger } from '../../../../core'
+import { CoreLogger } from '../../../../core'
 
 export class BusinessApiActions {
-  private readonly logger: FacebookLogger
+  private readonly logger: CoreLogger
 
   constructor() {
-    this.logger = FacebookLogger.getInstance()
+    this.logger = CoreLogger.getInstance()
   }
 
   async startApi(): Promise<void> {

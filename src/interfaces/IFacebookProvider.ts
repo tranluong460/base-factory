@@ -1,3 +1,4 @@
+import type { ITypeLogUpdate } from '@vitechgroup/mkt-elec-core'
 import type {
   BusinessApiActions,
   BusinessAutomatedActions,
@@ -15,9 +16,7 @@ export interface ProviderTypeMap {
   [EnumFacebookProvider.BUSINESS]: IBusinessProvider
 }
 
-export type ITypeLogUpdate = (options: IPayloadLogUpdate) => Promise<boolean>
-
-export interface IPayloadProvider<T extends EnumFacebookProvider> {
+export interface IPayloadProvider<T = EnumFacebookProvider> {
   type: T
   logUpdate: ITypeLogUpdate
 }
@@ -32,15 +31,4 @@ export interface IBusinessProvider {
   readonly useApi: BusinessApiActions
   readonly useAutomated: BusinessAutomatedActions
   readonly useScripted: BusinessScriptedActions
-}
-
-// --------------------------------------------------//
-
-interface IPayloadLogUpdate {
-  action: string
-  key: string
-  mess: string
-  success?: boolean
-  module?: 'mkt_fb' | undefined
-  uidTarget?: string | undefined
 }
