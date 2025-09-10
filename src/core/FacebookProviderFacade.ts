@@ -4,7 +4,7 @@ import { FacebookPluginLoader, FacebookProviderRegistry } from '.'
 
 export class FacebookProviderFacade {
   static async getProvider<T extends EnumFacebookProvider>(
-    payload: IPayloadProvider<T>,
+    payload: IPayloadProvider,
   ): Promise<ProviderTypeMap[T]> {
     await FacebookPluginLoader.loadPlugin(payload.type)
     return FacebookProviderRegistry.getFactory(payload.type).create(payload) as ProviderTypeMap[T]
