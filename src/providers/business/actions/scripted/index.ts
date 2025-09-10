@@ -1,4 +1,4 @@
-import { CoreLogger } from '../../../../core'
+import { CoreLogger } from '@vitechgroup/mkt-elec-core'
 
 export class BusinessScriptedActions {
   private readonly logger: CoreLogger
