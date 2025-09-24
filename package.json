@@ -2,7 +2,7 @@
   "name": "@vitechgroup/base-factory",
   "type": "module",
   "version": "1.0.2",
-  "lastUpdated": "23/05/2025",
+  "lastUpdated": "24/09/2025",
   "exports": {
     ".": {
       "import": "./dist/base-factory.js",
@@ -34,7 +34,7 @@
     "@commitlint/config-conventional": "^19.5.0",
     "@rollup/plugin-commonjs": "^28.0.1",
     "@types/node": "^20.16.12",
-    "@vitechgroup/mkt-elec-core": "https://github.com/vitechgroup-npm/mkt-elec-core-prod.git",
+    "@vitechgroup/mkt-elec-core": "https://github.com/VitechGroup/mkt-elec-core.git#dev",
     "@vitest/coverage-v8": "^1.6.0",
     "camelcase": "^8.0.0",
     "changelogen": "^0.5.7",
