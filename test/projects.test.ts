@@ -19,4 +19,13 @@ describe('projects', () => {
     const result = await labsManager.directApi.useProjects.createProject({ projectTitle: 'test' })
     logger.info('Create project result', result)
   })
+
+  it.skip('download list video', async () => {
+    const result = await labsManager.directApi.useUtils.downloadListVideoUrl([
+      'https://storage.googleapis.com/ai-sandbox-videofx/video/22de0ff8-20ec-4c43-ae9f-5430637d41e8?GoogleAccessId=labs-ai-sandbox-videoserver-prod@system.gserviceaccount.com&Expires=1759508604&Signature=dioO9JzauZFGG2eNhHqmuPUfjHG9UcnF9EQTtSNWlhUFtf9be58gY611Th9ikjGwqF2ezwQzSOPH4%2Bv%2B8elXz6VIxNxmewHUoXKbaGVgBzvfnObUcpW8sG6uwJObGTQUiqrHNcXLnY%2F5DjYoD3%2BPMXTkbbHTlxKLXde98r0Fp8g%2FqC8zso9q7b8%2B6yi0AipVHzfPAK9SYO9VCRGxxEz3PCex89eDAk%2FOA%2B655%2F8BXPqWabrW%2Fm7Q6%2F1UpYL0OUHesa52F4ojnsMmqb2pvuvFMz7BBkiQNmyzsueIu4q8e1Ggw%2FmZN%2FvUVNR%2FMW3rFyP6uhXRmUhpHfFMtzE5xn9KOQ%3D%3D',
+      'https://storage.googleapis.com/ai-sandbox-videofx/video/745350ee-9e0d-4f69-9ef4-9ab09cf33f9d?GoogleAccessId=labs-ai-sandbox-videoserver-prod@system.gserviceaccount.com&Expires=1759508604&Signature=l7XjOLW1eQ89ed0Wpy1e1RXzlGvMZs4hlVTkdE0xJnkcWZ%2Fj7oVAlAHnOhp6Fuvpf8MKirNZoTrDhKzzzBo1%2BxjJNhL%2FJDYaaodvD7S%2F%2FT9eYDzXFOqljiIsxHPdEfclLVmbUgpWheOPCsBwm1TnqFoIaou7YLm2eNWmxu8pHPjvivN7351FqcNi%2FGyY5pY0F%2FCkAZ89CvxORCp9sArYmEHI%2FsoMO8t5jzRmU7LtaUViIHqeI64AIHv3GO2rqskEfDdTfUXCoTARp0%2Fid4YfmoxUbWdIPYVkc0yCnguF3WYbC1v63H%2BtVt0rD42lOGsTLxnwoB7vqsP8FAUQMHc6Ww%3D%3D',
+    ])
+
+    logger.info('Download list video url result', result)
+  })
 })

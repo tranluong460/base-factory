@@ -5,6 +5,7 @@ export interface IPayloadLabsCall {
   referer?: string
   userAgent?: string
   proxyConfig?: AxiosProxyConfig
+  downloadDir?: string
 }
 
 export interface IPayloadGetLabsCall {
