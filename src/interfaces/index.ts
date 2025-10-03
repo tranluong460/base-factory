@@ -1,2 +1,1 @@
-export * from './IFacebookProvider'
-export * from './IFacebookProviderFactory'
+export * from './providers'

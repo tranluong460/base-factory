@@ -1,20 +1,28 @@
 import { describe, it } from 'vitest'
-import { EnumFacebookProvider, FacebookProviderFacade } from '../src'
+import { EnumLabsProvider, LabsProviderFacade } from '../src'
 
 describe('provider', () => {
-  it('www', async () => {
-    const www = await FacebookProviderFacade.getProvider({
-      type: EnumFacebookProvider.WWW,
+  it('aUTOMATED', async () => {
+    await LabsProviderFacade.getProvider({
+      type: EnumLabsProvider.AUTOMATED,
       logUpdate: async () => true,
+      data: 'data',
     })
-    await www.useApi.startApi()
   })
 
-  it('business', async () => {
-    const business = await FacebookProviderFacade.getProvider({
-      type: EnumFacebookProvider.BUSINESS,
+  it('sCRIPTED', async () => {
+    await LabsProviderFacade.getProvider({
+      type: EnumLabsProvider.SCRIPTED,
       logUpdate: async () => true,
+      data: 'data',
     })
-    await business.useApi.startApi()
+  })
+
+  it('dIRECT_API', async () => {
+    await LabsProviderFacade.getProvider({
+      type: EnumLabsProvider.DIRECT_API,
+      logUpdate: async () => true,
+      data: 'data',
+    })
   })
 })

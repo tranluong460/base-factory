@@ -1,3 +1,3 @@
-export * from './FacebookPluginLoader'
-export * from './FacebookProviderFacade'
-export * from './FacebookProviderRegistry'
+export * from './LabsPluginLoader'
+export * from './LabsProviderFacade'
+export * from './LabsProviderRegistry'
