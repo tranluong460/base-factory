@@ -33,13 +33,7 @@ export class DirectApiProjectsActions extends BaseProvider<UtilDirectApiActions>
       })
 
       const isSuccess = checkResultResponse(response)
-
-      const key = isSuccess ? 'create_project_success' : 'create_project_failed'
-      await this.utilActions.logUpdate({
-        action: 'create_project',
-        key,
-        mess: `create_project_${key}|${payload.projectTitle}`,
-      })
+      await this.log(isSuccess, 'create_project', [payload.projectTitle])
 
       return isSuccess ? response : undefined
     } catch (error) {
@@ -66,13 +60,7 @@ export class DirectApiProjectsActions extends BaseProvider<UtilDirectApiActions>
       })
 
       const isSuccess = checkResultResponse(response)
-
-      const key = isSuccess ? 'delete_project_success' : 'delete_project_failed'
-      await this.utilActions.logUpdate({
-        action: 'delete_project',
-        key,
-        mess: `delete_project_${key}|${projectId}`,
-      })
+      await this.log(isSuccess, 'delete_project', [projectId])
 
       return isSuccess
     } catch (error) {
@@ -106,13 +94,7 @@ export class DirectApiProjectsActions extends BaseProvider<UtilDirectApiActions>
       })
 
       const isSuccess = checkResultResponse(response)
-
-      const key = isSuccess ? 'get_info_project_success' : 'get_info_project_failed'
-      await this.utilActions.logUpdate({
-        action: 'get_info_project',
-        key,
-        mess: `get_info_project_${key}|${projectId}`,
-      })
+      await this.log(isSuccess, 'get_info_project', [projectId])
 
       return isSuccess ? response : undefined
     } catch (error) {

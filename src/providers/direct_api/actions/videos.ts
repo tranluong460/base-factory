@@ -93,16 +93,10 @@ export class DirectApiVideoActions extends BaseProvider<UtilDirectApiActions> {
         },
       })
 
-      const isFailed = isEmpty(response?.operations)
+      const isSuccess = !isEmpty(response?.operations)
+      await this.log(isSuccess, 'create_video', [payload.projectId])
 
-      const key = isFailed ? 'create_video_failed' : 'create_video_success'
-      await this.utilActions.logUpdate({
-        action: 'create_video',
-        key,
-        mess: `create_video_${key}|${payload.projectId}`,
-      })
-
-      return isFailed ? undefined : response
+      return isSuccess ? response : undefined
     } catch (error) {
       this.logger.error('[DirectApiVideoActions] Create video error', error)
       return undefined

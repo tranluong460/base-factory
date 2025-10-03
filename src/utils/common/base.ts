@@ -1,3 +1,4 @@
+import type { ITypeLogUpdate } from '@vitechgroup/mkt-elec-core'
 import { CoreLogger } from '@vitechgroup/mkt-elec-core'
 
 export class Base {
@@ -8,7 +9,7 @@ export class Base {
   }
 }
 
-export class BaseProvider<T> extends Base {
+export class BaseProvider<T extends { logUpdate: ITypeLogUpdate }> extends Base {
   protected clientMutationId: number = 0
   protected utilActions: T
 
@@ -16,5 +17,15 @@ export class BaseProvider<T> extends Base {
     super()
 
     this.utilActions = utilActions
+  }
+
+  protected async log(isSuccess: boolean, actionName: string, params?: string[]): Promise<void> {
+    const statusKey = actionName + (isSuccess ? '_success' : '_failed')
+
+    await this.utilActions.logUpdate({
+      action: actionName,
+      key: statusKey,
+      mess: params && params.length > 0 ? `${statusKey}|${params.join('|')}` : statusKey,
+    })
   }
 }

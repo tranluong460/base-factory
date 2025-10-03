@@ -14,16 +14,10 @@ export class DirectApiAccountActions extends BaseProvider<UtilDirectApiActions> 
         endPoint: 'auth/session',
       })
 
-      const isFailed = isEmpty(response?.access_token)
+      const isSuccess = !isEmpty(response?.access_token)
+      await this.log(isSuccess, 'get_token_account')
 
-      const key = isFailed ? 'get_token_account_failed' : 'get_token_account_success'
-      await this.utilActions.logUpdate({
-        action: 'get_token_account',
-        key,
-        mess: `get_token_account_${key}`,
-      })
-
-      return isFailed ? undefined : response
+      return isSuccess ? response : undefined
     } catch (error) {
       this.logger.error('[DirectApiAccountActions] Get token account error', error)
       return undefined
