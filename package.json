@@ -27,14 +27,22 @@
     "test:coverage": "vitest --coverage",
     "prepare": "husky"
   },
-  "dependencies": {},
+  "dependencies": {
+    "axios": "^1.12.2",
+    "http-proxy-agent": "^7.0.2",
+    "https-proxy-agent": "^7.0.6",
+    "puppeteer-core": "^23.6.0",
+    "socks-proxy-agent": "^8.0.5"
+  },
   "devDependencies": {
     "@antfu/eslint-config": "^2.9.0",
     "@commitlint/cli": "^19.5.0",
     "@commitlint/config-conventional": "^19.5.0",
     "@rollup/plugin-commonjs": "^28.0.1",
     "@types/node": "^20.16.12",
+    "@vitechgroup/mkt-browser": "https://github.com/vitechgroup-npm/mkt-browser-prod.git",
     "@vitechgroup/mkt-elec-core": "https://github.com/VitechGroup/mkt-elec-core.git#dev",
+    "@vitechgroup/mkt-key-client": "https://github.com/vitechgroup-npm/mkt-key-client-prod.git",
     "@vitest/coverage-v8": "^1.6.0",
     "camelcase": "^8.0.0",
     "changelogen": "^0.5.7",
