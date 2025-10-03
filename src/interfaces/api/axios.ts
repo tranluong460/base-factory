@@ -8,8 +8,7 @@ export interface IPayloadLabsCall {
   downloadDir?: string
 }
 
-export interface IPayloadGetLabsCall {
-  endPoint: string
+export interface IPayloadGetLabsCall extends Pick<IPayloadPostLabsCall, 'endPoint'> {
   params: any
   referer?: string
 }
