@@ -22,7 +22,7 @@ export class DirectApiProjectsActions extends BaseProvider<UtilDirectApiActions>
         mess: `wait_create_project|${payload.projectTitle}`,
       })
 
-      const response = await this.utilActions.labsClient.post<IResponseCreateProject>({
+      const response = await this.utilActions.labsClient.postTrpc<IResponseCreateProject>({
         endPoint: 'project.createProject',
         data: {
           json: {
@@ -56,7 +56,7 @@ export class DirectApiProjectsActions extends BaseProvider<UtilDirectApiActions>
         mess: `wait_delete_project|${projectId}`,
       })
 
-      const response = await this.utilActions.labsClient.post<IResponseDeleteProject>({
+      const response = await this.utilActions.labsClient.postTrpc<IResponseDeleteProject>({
         endPoint: 'project.deleteProject',
         data: {
           json: {
@@ -89,7 +89,7 @@ export class DirectApiProjectsActions extends BaseProvider<UtilDirectApiActions>
         mess: `wait_get_info_project|${projectId}`,
       })
 
-      const response = await this.utilActions.labsClient.get<IResponseGetInfoProject>({
+      const response = await this.utilActions.labsClient.getTrpc<IResponseGetInfoProject>({
         endPoint: 'project.searchProjectWorkflows',
         params: {
           json: {

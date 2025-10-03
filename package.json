@@ -31,6 +31,7 @@
     "axios": "^1.12.2",
     "http-proxy-agent": "^7.0.2",
     "https-proxy-agent": "^7.0.6",
+    "lodash": "^4.17.21",
     "puppeteer-core": "^23.6.0",
     "socks-proxy-agent": "^8.0.5"
   },
@@ -39,6 +40,7 @@
     "@commitlint/cli": "^19.5.0",
     "@commitlint/config-conventional": "^19.5.0",
     "@rollup/plugin-commonjs": "^28.0.1",
+    "@types/lodash": "^4.17.20",
     "@types/node": "^20.16.12",
     "@vitechgroup/mkt-browser": "https://github.com/vitechgroup-npm/mkt-browser-prod.git",
     "@vitechgroup/mkt-elec-core": "https://github.com/VitechGroup/mkt-elec-core.git#dev",

@@ -1,6 +1,8 @@
 import type { ITypeLogUpdate } from '@vitechgroup/mkt-elec-core'
 import type {
+  DirectApiAccountActions,
   DirectApiProjectsActions,
+  DirectApiVideoActions,
   UtilDirectApiActions,
 } from '../../providers/direct_api/actions'
 import type { EnumLabsProvider } from '../../utils'
@@ -34,4 +36,6 @@ export interface IAutomatedProvider {
 export interface IDirectApiProvider {
   useUtils: UtilDirectApiActions
   useProjects: DirectApiProjectsActions
+  useAccounts: DirectApiAccountActions
+  useVideos: DirectApiVideoActions
 }

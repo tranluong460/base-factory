@@ -8,6 +8,12 @@
     "delete_project_failed": "{{0}} 프로젝트 삭제 실패",
     "wait_get_video_fx_app_config": "{{0}} 비디오 FX 앱 설정 가져오기 대기",
     "get_video_fx_app_config_success": "{{0}} 비디오 FX 앱 설정 가져오기 성공",
-    "get_video_fx_app_config_failed": "{{0}} 비디오 FX 앱 설정 가져오기 실패"
+    "get_video_fx_app_config_failed": "{{0}} 비디오 FX 앱 설정 가져오기 실패",
+    "wait_create_video": "{{0}} 비디오 생성 대기",
+    "create_video_success": "{{0}} 비디오 생성 성공",
+    "create_video_failed": "{{0}} 비디오 생성 실패",
+    "wait_batch_check_generate_video": "{{0}} 비디오 생성 상태 확인 대기",
+    "batch_check_generate_video_failed": "{{0}} 비디오 생성 상태 확인 실패",
+    "prompt_violate_policy": "{{0}} 비디오 생성 상태 확인 실패 최대 횟수 도달"
   }
 }

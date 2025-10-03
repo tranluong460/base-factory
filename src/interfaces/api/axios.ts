@@ -18,3 +18,7 @@ export interface IPayloadPostLabsCall {
   endPoint: string
   data: any
 }
+
+export interface IPayloadPostAisandboxLabsCall extends IPayloadPostLabsCall {
+  accessToken: string
+}

@@ -8,6 +8,12 @@
     "delete_project_failed": "Delete project {{0}} failed",
     "wait_get_video_fx_app_config": "Waiting for get video fx app config {{0}}",
     "get_video_fx_app_config_success": "Get video fx app config {{0}} success",
-    "get_video_fx_app_config_failed": "Get video fx app config {{0}} failed"
+    "get_video_fx_app_config_failed": "Get video fx app config {{0}} failed",
+    "wait_create_video": "Waiting for create video {{0}}",
+    "create_video_success": "Create video {{0}} success",
+    "create_video_failed": "Create video {{0}} failed",
+    "wait_batch_check_generate_video": "Waiting for batch check generate video",
+    "batch_check_generate_video_failed": "Batch check generate video failed {{0}}",
+    "prompt_violate_policy": "Prompt violate policy"
   }
 }

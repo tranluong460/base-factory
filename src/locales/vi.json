@@ -8,6 +8,12 @@
     "delete_project_failed": "Xóa dự án {{0}} thất bại",
     "wait_get_video_fx_app_config": "Chờ lấy config app video {{0}}",
     "get_video_fx_app_config_success": "Lấy config app video {{0}} thành công",
-    "get_video_fx_app_config_failed": "Lấy config app video {{0}} thất bại"
+    "get_video_fx_app_config_failed": "Lấy config app video {{0}} thất bại",
+    "wait_create_video": "Chờ tạo video {{0}}",
+    "create_video_success": "Tạo video {{0}} thành công",
+    "create_video_failed": "Tạo video {{0}} thất bại",
+    "wait_batch_check_generate_video": "Chờ kiểm tra trạng thái video",
+    "batch_check_generate_video_failed": "Kiểm tra trạng thái video thất bại {{0}}",
+    "prompt_violate_policy": "Kiểm tra lại prompt vi phạm chính sách"
   }
 }

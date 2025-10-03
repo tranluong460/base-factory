@@ -28,4 +28,14 @@ describe('projects', () => {
 
     logger.info('Download list video url result', result)
   })
+
+  it.skip('get token account', async () => {
+    const result = await labsManager.directApi.useAccounts.getTokenAccount()
+    logger.info('Get token account result', result)
+  })
+
+  it('generate video', async () => {
+    const result = await labsManager.directApi.useVideos.generateVideo({ projectId: '84b67791-43ed-417b-8133-821b9cd7a837', prompt: 'kim long' }, 'text')
+    logger.info('Generate video result', result)
+  })
 })
