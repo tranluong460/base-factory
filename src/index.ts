@@ -1,4 +1,5 @@
 export * from './core'
 export * from './interfaces'
+export * from './LabsManager'
 export * from './locales'
 export * from './utils'

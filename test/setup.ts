@@ -1,9 +1,9 @@
 import { afterAll, beforeAll } from 'vitest'
 
 beforeAll(async () => {
-  console.log('beforeAll')
+  // console.log('beforeAll')
 })
 
 afterAll(async () => {
-  console.log('afterAll')
+  // console.log('afterAll')
 })

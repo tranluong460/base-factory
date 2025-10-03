@@ -1,5 +1,10 @@
 import type { ITypeLogUpdate } from '@vitechgroup/mkt-elec-core'
+import type {
+  DirectApiProjectsActions,
+  UtilDirectApiActions,
+} from '../../providers/direct_api/actions'
 import type { EnumLabsProvider } from '../../utils'
+import type { IPayloadLabsCall } from '../api'
 
 export interface ProviderTypeMap {
   [EnumLabsProvider.SCRIPTED]: IScriptedProvider
@@ -8,9 +13,9 @@ export interface ProviderTypeMap {
 }
 
 export interface PayloadConfigMap {
-  [EnumLabsProvider.SCRIPTED]: { data: string }
-  [EnumLabsProvider.AUTOMATED]: { data: string }
-  [EnumLabsProvider.DIRECT_API]: { data: string }
+  [EnumLabsProvider.SCRIPTED]: any
+  [EnumLabsProvider.AUTOMATED]: any
+  [EnumLabsProvider.DIRECT_API]: { labsConfig: IPayloadLabsCall }
 }
 
 export type IPayloadProvider<T extends EnumLabsProvider> = {
@@ -27,5 +32,6 @@ export interface IAutomatedProvider {
 }
 
 export interface IDirectApiProvider {
-  start: () => Promise<void>
+  useUtils: UtilDirectApiActions
+  useProjects: DirectApiProjectsActions
 }

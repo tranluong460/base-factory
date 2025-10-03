@@ -1,8 +1,8 @@
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, CreateAxiosDefaults } from 'axios'
 import axios from 'axios'
-import type { IPayloadLabsCall } from '../../interfaces'
+import type { IPayloadGetLabsCall, IPayloadLabsCall, IPayloadPostLabsCall } from '../../interfaces'
 import { Base, LABS_URLS } from '../common'
-import { createProxyAgent, handleError, logResponseError, parseResponse } from './private'
+import { createProxyAgent, handleError, parseResponse } from './private'
 
 class HttpClient extends Base {
   public readonly instance: AxiosInstance
@@ -47,30 +47,29 @@ class HttpClient extends Base {
       'user-agent':
         payload.userAgent
         || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
-      'Referer': payload.referer || LABS_URLS.BASE_URL(),
     }
   }
 
   private setupInterceptors(): void {
     this.instance.interceptors.request.use(
       (config) => {
-        // this.logger.debug(`[GraphQL] Request: ${config.url}`)
-        this.logger.debug(`[GraphQL] Data:`, config.data)
+        // this.logger.debug(`[LabsCall] Request: ${config.url}`)
+        // this.logger.debug(`[LabsCall] Data:`, config.data)
         return config
       },
       (error) => {
-        this.logger.error('[GraphQL] Request error:', error)
+        // this.logger.error('[LabsCall] Request error:', error)
         return Promise.reject(error)
       },
     )
 
     this.instance.interceptors.response.use(
       (response) => {
-        // this.logger.debug(`[GraphQL] Response: ${response.status}`)
+        // this.logger.debug(`[LabsCall] Response: ${response.status}`)
         return response
       },
       (error) => {
-        logResponseError(error)
+        // logResponseError(error)
         return Promise.reject(error)
       },
     )
@@ -101,18 +100,43 @@ class HttpClient extends Base {
   }
 }
 
+class UrlBuilder {
+  constructor() {}
+
+  buildTrpcUrl(endpoint: string): string {
+    return `${LABS_URLS.API_URL()}/` + `trpc` + `/${endpoint}`
+  }
+
+  buildTrpcGetUrl(endpoint: string, params: any): string {
+    const encodedInput = encodeURIComponent(JSON.stringify(params))
+    return `${this.buildTrpcUrl(endpoint)}?input=${encodedInput}`
+  }
+}
+
 export class LabsCallClient {
   private readonly httpClient: HttpClient
+  private readonly urlBuilder: UrlBuilder
 
   constructor(payload: IPayloadLabsCall) {
     this.httpClient = new HttpClient(payload)
+    this.urlBuilder = new UrlBuilder()
   }
 
-  async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return this.httpClient.get(url, config)
+  async get<T>(payload: IPayloadGetLabsCall): Promise<T> {
+    const url = this.urlBuilder.buildTrpcGetUrl(payload.endPoint, payload.params)
+    return this.httpClient.get(url, {
+      headers: {
+        Referer: payload.referer || LABS_URLS.BASE_URL(),
+      },
+    })
   }
 
-  async post<T>(url: string, data: any, config?: AxiosRequestConfig): Promise<T> {
-    return this.httpClient.post(url, data, config)
+  async post<T>(payload: IPayloadPostLabsCall): Promise<T> {
+    const url = this.urlBuilder.buildTrpcUrl(payload.endPoint)
+    return this.httpClient.post(url, payload.data, {
+      headers: {
+        Referer: LABS_URLS.BASE_URL(),
+      },
+    })
   }
 }

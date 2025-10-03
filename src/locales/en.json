@@ -1,3 +1,13 @@
 {
-  "log_process_run": {}
+  "log_process_run": {
+    "wait_create_project": "Waiting for create project {{0}}",
+    "create_project_success": "Create project {{0}} success",
+    "create_project_failed": "Create project {{0}} failed",
+    "wait_delete_project": "Waiting for delete project {{0}}",
+    "delete_project_success": "Delete project {{0}} success",
+    "delete_project_failed": "Delete project {{0}} failed",
+    "wait_get_video_fx_app_config": "Waiting for get video fx app config {{0}}",
+    "get_video_fx_app_config_success": "Get video fx app config {{0}} success",
+    "get_video_fx_app_config_failed": "Get video fx app config {{0}} failed"
+  }
 }

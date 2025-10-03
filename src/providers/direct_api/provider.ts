@@ -1,10 +1,21 @@
 import type { IDirectApiProvider, IPayloadProvider } from '../../interfaces'
 import type { EnumLabsProvider } from '../../utils'
+import { DirectApiProjectsActions, UtilDirectApiActions } from './actions'
 
 export class DirectApiProvider implements IDirectApiProvider {
-  constructor(private payload: IPayloadProvider<EnumLabsProvider.DIRECT_API>) {}
+  private utils: UtilDirectApiActions
+  private projects: DirectApiProjectsActions
 
-  public async start(): Promise<void> {
-    console.log(this.payload)
+  constructor(payload: IPayloadProvider<EnumLabsProvider.DIRECT_API>) {
+    this.utils = new UtilDirectApiActions(payload.labsConfig, payload.logUpdate)
+    this.projects = new DirectApiProjectsActions(this.utils)
+  }
+
+  public get useUtils(): UtilDirectApiActions {
+    return this.utils
+  }
+
+  public get useProjects(): DirectApiProjectsActions {
+    return this.projects
   }
 }

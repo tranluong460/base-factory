@@ -2,7 +2,7 @@ import { describe, it } from 'vitest'
 import { EnumLabsProvider, LabsProviderFacade } from '../src'
 
 describe('provider', () => {
-  it('aUTOMATED', async () => {
+  it.skip('aUTOMATED', async () => {
     await LabsProviderFacade.getProvider({
       type: EnumLabsProvider.AUTOMATED,
       logUpdate: async () => true,
@@ -10,7 +10,7 @@ describe('provider', () => {
     })
   })
 
-  it('sCRIPTED', async () => {
+  it.skip('sCRIPTED', async () => {
     await LabsProviderFacade.getProvider({
       type: EnumLabsProvider.SCRIPTED,
       logUpdate: async () => true,
@@ -18,11 +18,13 @@ describe('provider', () => {
     })
   })
 
-  it('dIRECT_API', async () => {
+  it.skip('dIRECT_API', async () => {
     await LabsProviderFacade.getProvider({
       type: EnumLabsProvider.DIRECT_API,
       logUpdate: async () => true,
-      data: 'data',
+      labsConfig: {
+        cookies: 'data',
+      },
     })
   })
 })

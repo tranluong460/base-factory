@@ -7,3 +7,14 @@ export class Base {
     this.logger = CoreLogger.getInstance()
   }
 }
+
+export class BaseProvider<T> extends Base {
+  protected clientMutationId: number = 0
+  protected utilActions: T
+
+  constructor(utilActions: T) {
+    super()
+
+    this.utilActions = utilActions
+  }
+}
