@@ -1,8 +1,8 @@
 import type { IDirectApiProvider, IPayloadProvider } from '../../interfaces'
-import type { EnumLabsProvider } from '../../utils'
+import type { EnumFacebookProvider } from '../../utils'
 
 export class DirectApiProvider implements IDirectApiProvider {
-  constructor(private payload: IPayloadProvider<EnumLabsProvider.DIRECT_API>) {}
+  constructor(private payload: IPayloadProvider<EnumFacebookProvider.DIRECT_API>) {}
 
   public async start(): Promise<void> {
     console.log(this.payload)

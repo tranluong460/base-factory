@@ -1,21 +1,21 @@
 import type { ITypeLogUpdate } from '@vitechgroup/mkt-elec-core'
-import type { EnumLabsProvider } from '../../utils'
+import type { EnumFacebookProvider } from '../../utils'
 
 export interface ProviderTypeMap {
-  [EnumLabsProvider.SCRIPTED]: IScriptedProvider
-  [EnumLabsProvider.AUTOMATED]: IAutomatedProvider
-  [EnumLabsProvider.DIRECT_API]: IDirectApiProvider
+  [EnumFacebookProvider.SCRIPTED]: IScriptedProvider
+  [EnumFacebookProvider.AUTOMATED]: IAutomatedProvider
+  [EnumFacebookProvider.DIRECT_API]: IDirectApiProvider
 }
 
 export interface PayloadConfigMap {
-  [EnumLabsProvider.SCRIPTED]: { data: string }
-  [EnumLabsProvider.AUTOMATED]: { data: string }
-  [EnumLabsProvider.DIRECT_API]: { data: string }
+  [EnumFacebookProvider.SCRIPTED]: { data: string }
+  [EnumFacebookProvider.AUTOMATED]: { data: string }
+  [EnumFacebookProvider.DIRECT_API]: { data: string }
 }
 
-export type IPayloadProvider<T extends EnumLabsProvider> = {
+export type IPayloadProvider<T extends EnumFacebookProvider> = {
   type: T
-  logUpdate: ITypeLogUpdate<'mkt_labs'>
+  logUpdate: ITypeLogUpdate<'mkt_fb'>
 } & PayloadConfigMap[T]
 
 export interface IScriptedProvider {

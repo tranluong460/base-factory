@@ -1,26 +1,26 @@
 import { describe, it } from 'vitest'
-import { EnumLabsProvider, LabsProviderFacade } from '../src'
+import { EnumFacebookProvider, FacebookProviderFacade } from '../src'
 
 describe('provider', () => {
   it('aUTOMATED', async () => {
-    await LabsProviderFacade.getProvider({
-      type: EnumLabsProvider.AUTOMATED,
+    await FacebookProviderFacade.getProvider({
+      type: EnumFacebookProvider.AUTOMATED,
       logUpdate: async () => true,
       data: 'data',
     })
   })
 
   it('sCRIPTED', async () => {
-    await LabsProviderFacade.getProvider({
-      type: EnumLabsProvider.SCRIPTED,
+    await FacebookProviderFacade.getProvider({
+      type: EnumFacebookProvider.SCRIPTED,
       logUpdate: async () => true,
       data: 'data',
     })
   })
 
   it('dIRECT_API', async () => {
-    await LabsProviderFacade.getProvider({
-      type: EnumLabsProvider.DIRECT_API,
+    await FacebookProviderFacade.getProvider({
+      type: EnumFacebookProvider.DIRECT_API,
       logUpdate: async () => true,
       data: 'data',
     })

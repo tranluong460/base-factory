@@ -1,8 +1,8 @@
 import { CoreLogger } from '@vitechgroup/mkt-elec-core'
-import type { EnumLabsProvider } from '../utils'
+import type { EnumFacebookProvider } from '../utils'
 
-export class LabsPluginLoader {
-  static async loadPlugin(providerId: EnumLabsProvider): Promise<void> {
+export class FacebookPluginLoader {
+  static async loadPlugin(providerId: EnumFacebookProvider): Promise<void> {
     const logger = CoreLogger.getInstance()
     try {
       const plugin = await import(`../providers/${providerId}/index.ts`)

@@ -1,9 +1,13 @@
-import type { ILabsProviderFactory, IPayloadProvider, IScriptedProvider } from '../../interfaces'
-import type { EnumLabsProvider } from '../../utils'
+import type {
+  IFacebookProviderFactory,
+  IPayloadProvider,
+  IScriptedProvider,
+} from '../../interfaces'
+import type { EnumFacebookProvider } from '../../utils'
 import { ScriptedProvider } from './provider'
 
-export class ScriptedFactory implements ILabsProviderFactory {
-  create(payload: IPayloadProvider<EnumLabsProvider>): IScriptedProvider {
-    return new ScriptedProvider(payload as IPayloadProvider<EnumLabsProvider.SCRIPTED>)
+export class ScriptedFactory implements IFacebookProviderFactory {
+  create(payload: IPayloadProvider<EnumFacebookProvider>): IScriptedProvider {
+    return new ScriptedProvider(payload as IPayloadProvider<EnumFacebookProvider.SCRIPTED>)
   }
 }

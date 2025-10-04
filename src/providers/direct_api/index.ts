@@ -1,7 +1,7 @@
-import { LabsProviderRegistry } from '../../core'
-import { EnumLabsProvider } from '../../utils'
+import { FacebookProviderRegistry } from '../../core'
+import { EnumFacebookProvider } from '../../utils'
 import { DirectApiFactory } from './factory'
 
 export function register(): void {
-  LabsProviderRegistry.register(EnumLabsProvider.DIRECT_API, new DirectApiFactory())
+  FacebookProviderRegistry.register(EnumFacebookProvider.DIRECT_API, new DirectApiFactory())
 }

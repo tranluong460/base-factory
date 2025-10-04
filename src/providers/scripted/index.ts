@@ -1,7 +1,7 @@
-import { LabsProviderRegistry } from '../../core'
-import { EnumLabsProvider } from '../../utils'
+import { FacebookProviderRegistry } from '../../core'
+import { EnumFacebookProvider } from '../../utils'
 import { ScriptedFactory } from './factory'
 
 export function register(): void {
-  LabsProviderRegistry.register(EnumLabsProvider.SCRIPTED, new ScriptedFactory())
+  FacebookProviderRegistry.register(EnumFacebookProvider.SCRIPTED, new ScriptedFactory())
 }

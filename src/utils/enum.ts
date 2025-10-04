@@ -1,4 +1,4 @@
-export enum EnumLabsProvider {
+export enum EnumFacebookProvider {
   SCRIPTED = 'scripted',
   AUTOMATED = 'automated',
   DIRECT_API = 'direct_api',

@@ -1,4 +1,4 @@
-import type { EnumLabsProvider } from '../../utils'
+import type { EnumFacebookProvider } from '../../utils'
 import type {
   IAutomatedProvider,
   IDirectApiProvider,
@@ -6,8 +6,8 @@ import type {
   IScriptedProvider,
 } from './types'
 
-export interface ILabsProviderFactory {
+export interface IFacebookProviderFactory {
   create: (
-    payload: IPayloadProvider<EnumLabsProvider>
+    payload: IPayloadProvider<EnumFacebookProvider>
   ) => IScriptedProvider | IAutomatedProvider | IDirectApiProvider
 }
