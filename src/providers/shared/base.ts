@@ -13,7 +13,7 @@ export class LabsBaseClass extends BaseClass {
     this.actionKey = actionKey
   }
 
-  public async logUpdate(
+  protected async logUpdate(
     key: string,
     params: (string | number)[] = [],
     success?: boolean,
