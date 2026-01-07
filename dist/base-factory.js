@@ -1,174 +1,230 @@
-import { CoreLogger as o } from "@vitechgroup/mkt-elec-core";
-const c = (e, t, r) => {
-  const s = e[t];
-  return s ? typeof s == "function" ? s() : Promise.resolve(s) : new Promise((I, a) => {
+import { CoreLogger as p, BaseClass as d } from "@vitechgroup/mkt-elec-core";
+const m = (e, t, a) => {
+  const r = e[t];
+  return r ? typeof r == "function" ? r() : Promise.resolve(r) : new Promise((n, c) => {
     (typeof queueMicrotask == "function" ? queueMicrotask : setTimeout)(
-      a.bind(
+      c.bind(
         null,
         new Error(
-          "Unknown variable dynamic import: " + t + (t.split("/").length !== r ? ". Note that variables only represent file names one level deep." : "")
+          "Unknown variable dynamic import: " + t + (t.split("/").length !== a ? ". Note that variables only represent file names one level deep." : "")
         )
       )
     );
   });
 };
-class g {
+class u {
   static async loadPlugin(t) {
-    const r = o.getInstance();
     try {
-      const s = await c(/* @__PURE__ */ Object.assign({ "../providers/business/index.ts": () => Promise.resolve().then(() => w), "../providers/www/index.ts": () => Promise.resolve().then(() => B) }), `../providers/${t}/index.ts`, 4);
-      if (s.register)
-        s.register();
+      const a = await m(/* @__PURE__ */ Object.assign({ "../providers/automated/index.ts": () => Promise.resolve().then(() => v), "../providers/direct_api/index.ts": () => Promise.resolve().then(() => $), "../providers/scripted/index.ts": () => Promise.resolve().then(() => U), "../providers/shared/index.ts": () => Promise.resolve().then(() => _) }), `../providers/${t}/index.ts`, 4);
+      if (a.register)
+        a.register();
       else
         throw new Error(`[Plugin Loader] No register in ${t}`);
-    } catch (s) {
-      throw r.error(`[Plugin Loader] Failed to load ${t}:`, s), s;
+    } catch (a) {
+      throw p.getInstance().error(`[Plugin Loader] Failed to load ${t}:`, a), a;
     }
   }
 }
-class $ {
+class I {
   static async getProvider(t) {
-    return await g.loadPlugin(t.type), i.getFactory(t.type).create(t);
+    return await u.loadPlugin(t.type), o.getFactory(t.type).create(t);
   }
 }
-class i {
+class o {
   static factories = /* @__PURE__ */ new Map();
-  static register(t, r) {
-    this.factories.set(t, r);
+  static register(t, a) {
+    this.factories.set(t, a);
   }
   static getFactory(t) {
-    const r = this.factories.get(t);
-    if (!r)
+    const a = this.factories.get(t);
+    if (!a)
       throw new Error(`[Provider Registry] No factory registered for '${t}'`);
-    return r;
+    return a;
   }
   static listProviders() {
     return Array.from(this.factories.keys());
   }
 }
-const l = {}, k = {
-  log_process_run: l
-}, u = {}, x = {
-  log_process_run: u
-}, d = {}, N = {
-  log_process_run: d
+const g = {
+  automated: {
+    action_example: {
+      start: "Start action example for automated {{1}} | Key target: {{0}}",
+      end: "End action example for automated {{1}} | Key target: {{0}}"
+    }
+  },
+  direct_api: {
+    action_example: {
+      start: "Start action example for direct_api {{1}} | Key target: {{0}}",
+      end: "End action example for direct_api {{1}} | Key target: {{0}}"
+    }
+  },
+  scripted: {
+    action_example: {
+      start: "Start action example for scripted {{1}} | Key target: {{0}}",
+      end: "End action example for scripted {{1}} | Key target: {{0}}"
+    }
+  }
+}, M = {
+  log_process_run: g
+}, y = {
+  automated: {
+    action_example: {
+      start: "자동화에 대한 액션 예제 시작 {{1}} | 대상 키: {{0}}",
+      end: "자동화에 대한 액션 예제 종료 {{1}} | 대상 키: {{0}}"
+    }
+  },
+  direct_api: {
+    action_example: {
+      start: "Direct API에 대한 액션 예제 시작 {{1}} | 대상 키: {{0}}",
+      end: "Direct API에 대한 액션 예제 종료 {{1}} | 대상 키: {{0}}"
+    }
+  },
+  scripted: {
+    action_example: {
+      start: "스크립트에 대한 액션 예제 시작 {{1}} | 대상 키: {{0}}",
+      end: "스크립트에 대한 액션 예제 종료 {{1}} | 대상 키: {{0}}"
+    }
+  }
+}, C = {
+  log_process_run: y
+}, h = {
+  automated: {
+    action_example: {
+      start: "Bắt đầu thực hiện action example cho automated {{1}} | Key target: {{0}}",
+      end: "Kết thúc thực hiện action example cho automated {{1}} | Key target: {{0}}"
+    }
+  },
+  direct_api: {
+    action_example: {
+      start: "Bắt đầu thực hiện action example cho direct_api {{1}} | Key target: {{0}}",
+      end: "Kết thúc thực hiện action example cho direct_api {{1}} | Key target: {{0}}"
+    }
+  },
+  scripted: {
+    action_example: {
+      start: "Bắt đầu thực hiện action example cho scripted {{1}} | Key target: {{0}}",
+      end: "Kết thúc thực hiện action example cho scripted {{1}} | Key target: {{0}}"
+    }
+  }
+}, F = {
+  log_process_run: h
 };
-var n = /* @__PURE__ */ ((e) => (e.WWW = "www", e.BUSINESS = "business", e))(n || {});
-class p {
-  logger;
-  constructor() {
-    this.logger = o.getInstance();
+var i = /* @__PURE__ */ ((e) => (e.SCRIPTED = "scripted", e.AUTOMATED = "automated", e.DIRECT_API = "direct_api", e))(i || {});
+class s extends d {
+  payload;
+  actionKey;
+  constructor(t, a) {
+    super(), this.payload = t, this.actionKey = a;
   }
-  async startApi() {
-    this.logger.info("BusinessApiActions start");
-  }
-}
-class y {
-  logger;
-  constructor() {
-    this.logger = o.getInstance();
-  }
-  async startAutomated() {
-    this.logger.info("BusinessAutomatedActions start");
-  }
-}
-class h {
-  logger;
-  constructor() {
-    this.logger = o.getInstance();
-  }
-  async startScripted() {
-    this.logger.info("BusinessScriptedActions start");
+  async logUpdate(t, a = [], r) {
+    const n = [this.payload.keyTarget, ...a].filter((l) => l !== ""), c = n.length > 0 ? `|${n.join("|")}` : "";
+    await this.payload.logUpdate({
+      action: this.actionKey,
+      key: t,
+      mess: `${this.actionKey}.${t}${c}`,
+      // Format: action.key|param1|param2|...
+      success: r,
+      uidTarget: this.payload.keyTarget
+    });
   }
 }
+const _ = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  LabsBaseClass: s
+}, Symbol.toStringTag, { value: "Module" }));
+let x = class extends s {
+  constructor(t) {
+    super(t, "automated.action_example");
+  }
+  async start() {
+    await this.logUpdate("start", [123]), await this.logUpdate("end", [456]);
+  }
+};
 class f {
-  get useApi() {
-    return new p();
+  constructor(t) {
+    this.payload = t, this.actionExample = new x(this.payload);
   }
-  get useAutomated() {
-    return new y();
-  }
-  get useScripted() {
-    return new h();
+  actionExample;
+  async start() {
+    await this.actionExample.start();
   }
 }
-class W {
-  create() {
-    return new f();
+class w {
+  create(t) {
+    return new f(t);
+  }
+}
+function P() {
+  o.register(i.AUTOMATED, new w());
+}
+const v = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  register: P
+}, Symbol.toStringTag, { value: "Module" }));
+let E = class extends s {
+  constructor(t) {
+    super(t, "direct_api.action_example");
+  }
+  async start() {
+    await this.logUpdate("start", [123]), await this.logUpdate("end", [456]);
+  }
+};
+class K {
+  constructor(t) {
+    this.payload = t, this.actionExample = new E(this.payload);
+  }
+  actionExample;
+  async start() {
+    await this.actionExample.start();
+  }
+}
+class b {
+  create(t) {
+    return new K(t);
   }
 }
 function A() {
-  i.register(n.BUSINESS, new W());
+  o.register(i.DIRECT_API, new b());
 }
-const w = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const $ = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   register: A
 }, Symbol.toStringTag, { value: "Module" }));
-class m {
-  logger;
-  payload;
+class S extends s {
   constructor(t) {
-    this.logger = o.getInstance(), this.payload = t;
+    super(t, "scripted.action_example");
   }
-  async startApi() {
-    this.logger.info("payload", this.payload), this.logger.info("WWWApiActions start");
+  async start() {
+    await this.logUpdate("start", [123]), await this.logUpdate("end", [456]);
   }
 }
-class _ {
-  logger;
-  payload;
+class T {
   constructor(t) {
-    this.logger = o.getInstance(), this.payload = t;
+    this.payload = t, this.actionExample = new S(this.payload);
   }
-  async startAutomated() {
-    this.logger.info("payload", this.payload), this.logger.info("WWWAutomatedActions start");
+  actionExample;
+  async start() {
+    await this.actionExample.start();
   }
 }
-class v {
-  logger;
-  payload;
-  constructor(t) {
-    this.logger = o.getInstance(), this.payload = t;
-  }
-  async startScripted() {
-    this.logger.info("payload", this.payload), this.logger.info("WWWScriptedActions start");
-  }
-}
-class S {
-  automated;
-  scripted;
-  api;
-  constructor(t) {
-    this.automated = new _(t), this.scripted = new v(t), this.api = new m(t);
-  }
-  get useAutomated() {
-    return this.automated;
-  }
-  get useScripted() {
-    return this.scripted;
-  }
-  get useApi() {
-    return this.api;
-  }
-}
-class P {
+class O {
   create(t) {
-    return new S(t);
+    return new T(t);
   }
 }
-function b() {
-  i.register(n.WWW, new P());
+function D() {
+  o.register(i.SCRIPTED, new O());
 }
-const B = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const U = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  register: b
+  register: D
 }, Symbol.toStringTag, { value: "Module" }));
 export {
-  k as EN,
-  n as EnumFacebookProvider,
-  g as FacebookPluginLoader,
-  $ as FacebookProviderFacade,
-  i as FacebookProviderRegistry,
-  x as KO,
-  N as VI
+  M as EN,
+  i as EnumLabsProvider,
+  C as KO,
+  u as LabsPluginLoader,
+  I as LabsProviderFacade,
+  o as LabsProviderRegistry,
+  F as VI
 };

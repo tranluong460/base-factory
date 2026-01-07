@@ -1,100 +1,142 @@
 import { ITypeLogUpdate } from '@vitechgroup/mkt-elec-core';
 
-declare class BusinessApiActions {
-    private readonly logger;
-    constructor();
-    startApi(): Promise<void>;
-}
-
-declare class BusinessAutomatedActions {
-    private readonly logger;
-    constructor();
-    startAutomated(): Promise<void>;
-}
-
-declare class BusinessScriptedActions {
-    private readonly logger;
-    constructor();
-    startScripted(): Promise<void>;
-}
-
 export declare const EN: {
-    "log_process_run": {}
+    "log_process_run": {
+        "automated": {
+            "action_example": {
+                "start": "Start action example for automated {{1}} | Key target: {{0}}",
+                "end": "End action example for automated {{1}} | Key target: {{0}}"
+            }
+        },
+        "direct_api": {
+            "action_example": {
+                "start": "Start action example for direct_api {{1}} | Key target: {{0}}",
+                "end": "End action example for direct_api {{1}} | Key target: {{0}}"
+            }
+        },
+        "scripted": {
+            "action_example": {
+                "start": "Start action example for scripted {{1}} | Key target: {{0}}",
+                "end": "End action example for scripted {{1}} | Key target: {{0}}"
+            }
+        }
+    }
 };
 
-export declare enum EnumFacebookProvider {
-    WWW = "www",
-    BUSINESS = "business"
+export declare enum EnumLabsProvider {
+    SCRIPTED = "scripted",
+    AUTOMATED = "automated",
+    DIRECT_API = "direct_api"
 }
 
-export declare class FacebookPluginLoader {
-    static loadPlugin(providerId: EnumFacebookProvider): Promise<void>;
+export declare interface IAutomatedProvider {
+    start: () => Promise<void>;
 }
 
-export declare class FacebookProviderFacade {
-    static getProvider<T extends EnumFacebookProvider>(payload: IPayloadProvider): Promise<ProviderTypeMap[T]>;
+export declare interface IDirectApiProvider {
+    start: () => Promise<void>;
 }
 
-export declare class FacebookProviderRegistry {
-    private static factories;
-    static register(type: EnumFacebookProvider, factory: IFacebookProviderFactory): void;
-    static getFactory(type: EnumFacebookProvider): IFacebookProviderFactory;
-    static listProviders(): string[];
+export declare interface ILabsProviderFactory {
+    create: (payload: IPayloadProvider<EnumLabsProvider>) => IScriptedProvider | IAutomatedProvider | IDirectApiProvider;
 }
 
-export declare interface IBusinessProvider {
-    readonly useApi: BusinessApiActions;
-    readonly useAutomated: BusinessAutomatedActions;
-    readonly useScripted: BusinessScriptedActions;
-}
-
-export declare interface IFacebookProviderFactory {
-    create: (payload: IPayloadProvider) => IWWWProvider | IBusinessProvider;
-}
-
-export declare interface IPayloadProvider<T = EnumFacebookProvider> {
+export declare type IPayloadProvider<T extends EnumLabsProvider> = {
     type: T;
-    logUpdate: ITypeLogUpdate;
-}
+    keyTarget: string;
+    logUpdate: ITypeLogUpdate<'mkt_labs'>;
+} & PayloadConfigMap[T];
 
-export declare interface IWWWProvider {
-    readonly useApi: WWWApiActions;
-    readonly useAutomated: WWWAutomatedActions;
-    readonly useScripted: WWWScriptedActions;
+export declare interface IScriptedProvider {
+    start: () => Promise<void>;
 }
 
 export declare const KO: {
-    "log_process_run": {}
+    "log_process_run": {
+        "automated": {
+            "action_example": {
+                "start": "자동화에 대한 액션 예제 시작 {{1}} | 대상 키: {{0}}",
+                "end": "자동화에 대한 액션 예제 종료 {{1}} | 대상 키: {{0}}"
+            }
+        },
+        "direct_api": {
+            "action_example": {
+                "start": "Direct API에 대한 액션 예제 시작 {{1}} | 대상 키: {{0}}",
+                "end": "Direct API에 대한 액션 예제 종료 {{1}} | 대상 키: {{0}}"
+            }
+        },
+        "scripted": {
+            "action_example": {
+                "start": "스크립트에 대한 액션 예제 시작 {{1}} | 대상 키: {{0}}",
+                "end": "스크립트에 대한 액션 예제 종료 {{1}} | 대상 키: {{0}}"
+            }
+        }
+    }
 };
 
+export declare class LabsPluginLoader {
+    static loadPlugin(providerId: EnumLabsProvider): Promise<void>;
+}
+
+export declare class LabsProviderFacade {
+    static getProvider<T extends EnumLabsProvider>(payload: IPayloadProvider<T>): Promise<ProviderTypeMap[T]>;
+}
+
+export declare class LabsProviderRegistry {
+    private static factories;
+    static register(type: EnumLabsProvider, factory: ILabsProviderFactory): void;
+    static getFactory(type: EnumLabsProvider): ILabsProviderFactory;
+    static listProviders(): string[];
+}
+
+export declare interface PayloadConfigMap {
+    [EnumLabsProvider.SCRIPTED]: {
+        example: {
+            example1: string;
+            example2: number;
+        };
+    };
+    [EnumLabsProvider.AUTOMATED]: {
+        example: {
+            example1: string;
+            example2: number;
+        };
+    };
+    [EnumLabsProvider.DIRECT_API]: {
+        example: {
+            example1: string;
+            example2: number;
+        };
+    };
+}
+
 export declare interface ProviderTypeMap {
-    [EnumFacebookProvider.WWW]: IWWWProvider;
-    [EnumFacebookProvider.BUSINESS]: IBusinessProvider;
+    [EnumLabsProvider.SCRIPTED]: IScriptedProvider;
+    [EnumLabsProvider.AUTOMATED]: IAutomatedProvider;
+    [EnumLabsProvider.DIRECT_API]: IDirectApiProvider;
 }
 
 export declare const VI: {
-    "log_process_run": {}
+    "log_process_run": {
+        "automated": {
+            "action_example": {
+                "start": "Bắt đầu thực hiện action example cho automated {{1}} | Key target: {{0}}",
+                "end": "Kết thúc thực hiện action example cho automated {{1}} | Key target: {{0}}"
+            }
+        },
+        "direct_api": {
+            "action_example": {
+                "start": "Bắt đầu thực hiện action example cho direct_api {{1}} | Key target: {{0}}",
+                "end": "Kết thúc thực hiện action example cho direct_api {{1}} | Key target: {{0}}"
+            }
+        },
+        "scripted": {
+            "action_example": {
+                "start": "Bắt đầu thực hiện action example cho scripted {{1}} | Key target: {{0}}",
+                "end": "Kết thúc thực hiện action example cho scripted {{1}} | Key target: {{0}}"
+            }
+        }
+    }
 };
-
-declare class WWWApiActions {
-    private readonly logger;
-    private payload;
-    constructor(payload: IPayloadProvider);
-    startApi(): Promise<void>;
-}
-
-declare class WWWAutomatedActions {
-    private readonly logger;
-    private payload;
-    constructor(payload: IPayloadProvider);
-    startAutomated(): Promise<void>;
-}
-
-declare class WWWScriptedActions {
-    private readonly logger;
-    private payload;
-    constructor(payload: IPayloadProvider);
-    startScripted(): Promise<void>;
-}
 
 export { }
