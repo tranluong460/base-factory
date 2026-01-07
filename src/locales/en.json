@@ -1,3 +1,22 @@
 {
-  "log_process_run": {}
+  "log_process_run": {
+    "automated": {
+      "action_example": {
+        "start": "Start action example for automated {{1}} | Key target: {{0}}",
+        "end": "End action example for automated {{1}} | Key target: {{0}}"
+      }
+    },
+    "direct_api": {
+      "action_example": {
+        "start": "Start action example for direct_api {{1}} | Key target: {{0}}",
+        "end": "End action example for direct_api {{1}} | Key target: {{0}}"
+      }
+    },
+    "scripted": {
+      "action_example": {
+        "start": "Start action example for scripted {{1}} | Key target: {{0}}",
+        "end": "End action example for scripted {{1}} | Key target: {{0}}"
+      }
+    }
+  }
 }

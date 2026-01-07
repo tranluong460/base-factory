@@ -8,13 +8,14 @@ export interface ProviderTypeMap {
 }
 
 export interface PayloadConfigMap {
-  [EnumLabsProvider.SCRIPTED]: { data: string }
-  [EnumLabsProvider.AUTOMATED]: { data: string }
-  [EnumLabsProvider.DIRECT_API]: { data: string }
+  [EnumLabsProvider.SCRIPTED]: { example: { example1: string, example2: number } }
+  [EnumLabsProvider.AUTOMATED]: { example: { example1: string, example2: number } }
+  [EnumLabsProvider.DIRECT_API]: { example: { example1: string, example2: number } }
 }
 
 export type IPayloadProvider<T extends EnumLabsProvider> = {
   type: T
+  keyTarget: string
   logUpdate: ITypeLogUpdate<'mkt_labs'>
 } & PayloadConfigMap[T]
 

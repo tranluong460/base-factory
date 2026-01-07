@@ -1,10 +1,15 @@
 import type { IPayloadProvider, IScriptedProvider } from '../../interfaces'
 import type { EnumLabsProvider } from '../../utils'
+import { ActionExample } from './services'
 
 export class ScriptedProvider implements IScriptedProvider {
-  constructor(private payload: IPayloadProvider<EnumLabsProvider.SCRIPTED>) {}
+  private actionExample: ActionExample
+
+  constructor(private payload: IPayloadProvider<EnumLabsProvider.SCRIPTED>) {
+    this.actionExample = new ActionExample(this.payload)
+  }
 
   public async start(): Promise<void> {
-    console.log(this.payload)
+    await this.actionExample.start()
   }
 }

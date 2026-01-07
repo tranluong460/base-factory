@@ -1,3 +1,22 @@
 {
-  "log_process_run": {}
+  "log_process_run": {
+    "automated": {
+      "action_example": {
+        "start": "Bắt đầu thực hiện action example cho automated {{1}} | Key target: {{0}}",
+        "end": "Kết thúc thực hiện action example cho automated {{1}} | Key target: {{0}}"
+      }
+    },
+    "direct_api": {
+      "action_example": {
+        "start": "Bắt đầu thực hiện action example cho direct_api {{1}} | Key target: {{0}}",
+        "end": "Kết thúc thực hiện action example cho direct_api {{1}} | Key target: {{0}}"
+      }
+    },
+    "scripted": {
+      "action_example": {
+        "start": "Bắt đầu thực hiện action example cho scripted {{1}} | Key target: {{0}}",
+        "end": "Kết thúc thực hiện action example cho scripted {{1}} | Key target: {{0}}"
+      }
+    }
+  }
 }

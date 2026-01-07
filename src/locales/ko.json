@@ -1,3 +1,22 @@
 {
-  "log_process_run": {}
+  "log_process_run": {
+    "automated": {
+      "action_example": {
+        "start": "자동화에 대한 액션 예제 시작 {{1}} | 대상 키: {{0}}",
+        "end": "자동화에 대한 액션 예제 종료 {{1}} | 대상 키: {{0}}"
+      }
+    },
+    "direct_api": {
+      "action_example": {
+        "start": "Direct API에 대한 액션 예제 시작 {{1}} | 대상 키: {{0}}",
+        "end": "Direct API에 대한 액션 예제 종료 {{1}} | 대상 키: {{0}}"
+      }
+    },
+    "scripted": {
+      "action_example": {
+        "start": "스크립트에 대한 액션 예제 시작 {{1}} | 대상 키: {{0}}",
+        "end": "스크립트에 대한 액션 예제 종료 {{1}} | 대상 키: {{0}}"
+      }
+    }
+  }
 }
