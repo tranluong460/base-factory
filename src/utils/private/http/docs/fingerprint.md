@@ -6,15 +6,12 @@ Emulate real browser fingerprints to avoid bot detection.
 
 - [Overview](#overview)
 - [How It Works](#how-it-works)
-- [API Reference](#api-reference)
 - [Presets](#presets)
-- [Configuration Options](#configuration-options)
+- [Configuration](#configuration)
 - [Usage Examples](#usage-examples)
-- [Header Rotation](#header-rotation)
-- [TLS Fingerprint Evasion](#tls-fingerprint-evasion)
-- [Device Database](#device-database)
-- [Direct API Usage](#direct-api-usage)
-- [Generated Headers Explained](#generated-headers-explained)
+- [Generated Headers](#generated-headers)
+- [Seed System](#seed-system)
+- [Header Ordering](#header-ordering)
 - [Limitations](#limitations)
 - [Best Practices](#best-practices)
 
@@ -26,11 +23,12 @@ The fingerprint module generates realistic HTTP headers that mimic real browsers
 
 | Component | Description |
 |-----------|-------------|
-| User-Agent | Browser, OS, device information |
-| sec-ch-ua | Client Hints (Chrome/Edge) |
+| User-Agent | Browser, OS, version (UA Reduction format) |
+| Client Hints | sec-ch-ua, platform, mobile, full-version-list |
+| Sec-Fetch | Request context headers |
 | Accept headers | Content type preferences |
-| Sec-Fetch headers | Request context |
-| TLS Ciphers | Shuffled cipher order |
+| Priority | RFC 9218 priority hints (Chrome 124+) |
+| Header Order | Browser-specific header ordering |
 
 ---
 
@@ -45,109 +43,64 @@ Websites detect bots by analyzing HTTP headers. Real browsers send specific head
 User-Agent: axios/1.6.0
 
 # Real Browser (what we generate)
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36...
-sec-ch-ua: "Chromium";v="131", "Google Chrome";v="131"
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+sec-ch-ua: "Not)A;Brand";v="8", "Chromium";v="139", "Google Chrome";v="139"
 sec-ch-ua-mobile: ?0
 sec-ch-ua-platform: "Windows"
+sec-ch-ua-full-version-list: "Not)A;Brand";v="8.0.0.0", "Chromium";v="139.0.7258.88", "Google Chrome";v="139.0.7258.88"
+priority: u=0, i
+accept-encoding: gzip, deflate, br, zstd
 ```
 
-### TLS Fingerprinting (JA3/JA4)
+### Key Techniques
 
-Websites can also fingerprint TLS handshake parameters:
-- Cipher suite order
-- TLS extensions
-- Supported curves
-
-**Our solution**: Shuffle cipher order to vary TLS fingerprint. This bypasses basic JA3 detection but not advanced JA4+ systems.
-
----
-
-## API Reference
-
-### HttpClient Methods
-
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `getFingerprintConfig` | `getFingerprintConfig(): FingerprintConfig \| undefined` | Get current config |
-| `generateBrowserHeaders` | `generateBrowserHeaders(): BrowserHeaders \| undefined` | Generate new headers |
-| `rotateFingerprintHeaders` | `rotateFingerprintHeaders(): void` | Apply new random headers |
-
-### Header Generation Functions
-
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `generateHeaders` | `generateHeaders(config: FingerprintConfig): BrowserHeaders` | Generate from config |
-| `generateFromPreset` | `generateFromPreset(preset: FingerprintPreset): BrowserHeaders` | Generate from preset |
-| `createHeaderGenerator` | `createHeaderGenerator(config: FingerprintConfig): HeaderGenerator` | Create reusable generator |
-
-### Preset Functions
-
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `getPreset` | `getPreset(name: FingerprintPreset): PresetData` | Get preset data |
-| `getPresetNames` | `getPresetNames(): FingerprintPreset[]` | List all preset names |
-| `getPresetsByDevice` | `getPresetsByDevice(device: 'desktop' \| 'mobile'): FingerprintPreset[]` | Filter by device |
-| `getPresetsByOS` | `getPresetsByOS(os: string): FingerprintPreset[]` | Filter by OS |
-| `getPresetsByBrowser` | `getPresetsByBrowser(browser: string): FingerprintPreset[]` | Filter by browser |
-
-### Device Functions
-
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `getRandomDevice` | `getRandomDevice(brand: MobileDeviceBrand, seed?: string): MobileDeviceInfo` | Random device by brand (seeded) |
-| `getRandomAndroidVersion` | `getRandomAndroidVersion(device?: MobileDeviceInfo): string` | Random Android version |
-| `getRandomIOSVersion` | `getRandomIOSVersion(device?: MobileDeviceInfo): string` | Random iOS version |
-| `getDeviceBrands` | `getDeviceBrands(platform: 'android' \| 'ios'): MobileDeviceBrand[]` | List brands |
-| `getDevicesByBrand` | `getDevicesByBrand(brand: MobileDeviceBrand): DeviceSpec[] \| IOSDeviceSpec[]` | List devices |
-
-### TLS Functions
-
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `createStealthAgent` | `createStealthAgent(options?: AgentOptions): https.Agent` | Create agent with shuffled ciphers |
-| `getShuffledCiphers` | `getShuffledCiphers(): string` | Get randomized cipher string |
-| `getDefaultCiphers` | `getDefaultCiphers(): string[]` | Get Node.js default ciphers |
-| `isCipherShufflingSupported` | `isCipherShufflingSupported(): boolean` | Check TLS support |
+| Technique | Description |
+|-----------|-------------|
+| UA Reduction | Chrome 110+ uses `Chrome/xxx.0.0.0` format |
+| GREASE Brands | Rotating fake brands per version to prevent fingerprinting |
+| Client Hints | Low entropy (default) + High entropy headers |
+| Header Order | Browser-specific ordering (Chrome, Firefox, Safari have different orders) |
+| Priority Header | Chrome/Firefox 124+ send `u=0, i` |
+| zstd Encoding | Chrome 123+ supports zstd compression |
 
 ---
 
 ## Presets
 
+### Browser Versions (2024-2026)
+
+| Browser | Version Range |
+|---------|---------------|
+| Chrome | 130 - 145 |
+| Firefox | 130 - 147 |
+| Safari | 18 - 26 |
+| Edge | 130 - 144 |
+
 ### Desktop Presets
 
-| Preset | Browser | Version | OS | Use Case |
-|--------|---------|---------|-----|----------|
-| `CHROME_WINDOWS` | Chrome | 130-133 | Windows 10/11 | Most common, best compatibility |
-| `CHROME_MACOS` | Chrome | 130-133 | macOS | Mac users |
-| `CHROME_LINUX` | Chrome | 130-133 | Linux | Developer persona |
-| `FIREFOX_WINDOWS` | Firefox | 130-133 | Windows | Privacy-focused |
-| `FIREFOX_MACOS` | Firefox | 130-133 | macOS | Mac + privacy |
-| `FIREFOX_LINUX` | Firefox | 130-133 | Linux | Linux developer |
-| `SAFARI_MACOS` | Safari | 17-18 | macOS | Apple ecosystem |
-| `EDGE_WINDOWS` | Edge | 130-133 | Windows | Enterprise |
+| Preset | Browser | OS | Use Case |
+|--------|---------|-----|----------|
+| `CHROME_WINDOWS` | Chrome | Windows 10/11 | Most common, best compatibility |
+| `CHROME_MACOS` | Chrome | macOS | Mac users |
+| `CHROME_LINUX` | Chrome | Linux | Developer persona |
+| `FIREFOX_WINDOWS` | Firefox | Windows | Privacy-focused |
+| `FIREFOX_MACOS` | Firefox | macOS | Mac + privacy |
+| `FIREFOX_LINUX` | Firefox | Linux | Linux developer |
+| `SAFARI_MACOS` | Safari | macOS | Apple ecosystem |
+| `EDGE_WINDOWS` | Edge | Windows | Enterprise |
 
-### Android Presets
+### Mobile Presets
 
-| Preset | Browser | Devices | Use Case |
-|--------|---------|---------|----------|
-| `CHROME_ANDROID` | Chrome | All brands | General mobile |
-| `CHROME_ANDROID_SAMSUNG` | Chrome | Samsung Galaxy | Premium Android |
-| `CHROME_ANDROID_PIXEL` | Chrome | Google Pixel | Stock Android |
-| `CHROME_ANDROID_XIAOMI` | Chrome | Xiaomi/Redmi | Asian markets |
-| `FIREFOX_ANDROID` | Firefox | Various | Mobile privacy |
-
-### iOS Presets
-
-| Preset | Browser | Devices | Use Case |
-|--------|---------|---------|----------|
-| `SAFARI_IOS` | Safari | iPhone + iPad | General iOS |
-| `SAFARI_IPHONE` | Safari | iPhone only | Mobile iOS |
-| `SAFARI_IPAD` | Safari | iPad only | Tablet |
-| `CHROME_IOS` | Chrome | iPhone | iOS + Google services |
+| Preset | Browser | OS | Use Case |
+|--------|---------|-----|----------|
+| `CHROME_ANDROID` | Chrome | Android | General Android |
+| `CHROME_IOS` | Chrome | iOS | iOS + Google services |
+| `FIREFOX_ANDROID` | Firefox | Android | Mobile privacy |
+| `SAFARI_IOS` | Safari | iOS | iPhone/iPad |
 
 ---
 
-## Configuration Options
+## Configuration
 
 ### FingerprintConfig Interface
 
@@ -156,58 +109,44 @@ interface FingerprintConfig {
   /** Enable fingerprint generation */
   enabled?: boolean
 
-  /** Use preset (overrides other options) */
+  /** Use preset (recommended) */
   preset?: FingerprintPreset
 
-  /** Browser specifications */
-  browsers?: (BrowserName | BrowserSpec)[]
-
-  /** Target operating systems */
-  operatingSystems?: OperatingSystem[]
-
-  /** Device types */
-  devices?: DeviceType[]
-
-  /** Mobile device brands */
-  mobileDevices?: MobileDeviceBrand[]
-
-  /** Locale preferences */
+  /** Locale preferences (e.g., 'en-US', 'vi-VN') */
   locales?: string[]
 
-  /** TLS cipher shuffling */
+  /** Shuffle TLS ciphers */
   shuffleCiphers?: boolean
 
   /**
    * Seed for consistent fingerprint generation.
    * Same seed = same fingerprint every time.
-   * Useful for maintaining consistent identity per account/session.
+   * Useful for maintaining consistent identity per account.
    */
   seed?: string
 }
 ```
 
-### BrowserSpec Interface
+### Available Presets
 
 ```typescript
-interface BrowserSpec {
-  name: BrowserName // 'chrome' | 'firefox' | 'safari' | 'edge'
-  minVersion?: number // Minimum version (default: 120)
-  maxVersion?: number // Maximum version (default: 125)
-}
-```
+type DesktopPreset =
+  | 'CHROME_WINDOWS'
+  | 'CHROME_MACOS'
+  | 'CHROME_LINUX'
+  | 'FIREFOX_WINDOWS'
+  | 'FIREFOX_MACOS'
+  | 'FIREFOX_LINUX'
+  | 'SAFARI_MACOS'
+  | 'EDGE_WINDOWS'
 
-### Type Definitions
+type MobilePreset =
+  | 'CHROME_ANDROID'
+  | 'CHROME_IOS'
+  | 'FIREFOX_ANDROID'
+  | 'SAFARI_IOS'
 
-```typescript
-type BrowserName = 'chrome' | 'firefox' | 'safari' | 'edge'
-
-type OperatingSystem = 'windows' | 'macos' | 'linux' | 'android' | 'ios'
-
-type DeviceType = 'desktop' | 'mobile'
-
-type MobileDeviceBrand =
-  | 'samsung' | 'pixel' | 'xiaomi' | 'oppo'
-  | 'huawei' | 'oneplus' | 'iphone' | 'ipad' | 'generic'
+type FingerprintPreset = DesktopPreset | MobilePreset
 ```
 
 ---
@@ -224,67 +163,6 @@ const client = new HttpClient({
   baseURL: 'https://api.example.com',
   fingerprint: {
     preset: 'CHROME_WINDOWS',
-  },
-})
-```
-
-### Custom Configuration
-
-```typescript
-// Random between Chrome and Firefox on Windows/macOS
-const client = new HttpClient({
-  baseURL: 'https://api.example.com',
-  fingerprint: {
-    enabled: true,
-    browsers: ['chrome', 'firefox'],
-    operatingSystems: ['windows', 'macos'],
-    devices: ['desktop'],
-  },
-})
-```
-
-### Specific Browser Version
-
-```typescript
-// Chrome version 130-131 only
-const client = new HttpClient({
-  baseURL: 'https://api.example.com',
-  fingerprint: {
-    enabled: true,
-    browsers: [{ name: 'chrome', minVersion: 130, maxVersion: 131 }],
-    operatingSystems: ['windows'],
-  },
-})
-```
-
-### Mobile Emulation
-
-```typescript
-// Android Samsung/Pixel
-const client = new HttpClient({
-  baseURL: 'https://api.example.com',
-  fingerprint: {
-    enabled: true,
-    browsers: ['chrome'],
-    operatingSystems: ['android'],
-    devices: ['mobile'],
-    mobileDevices: ['samsung', 'pixel'],
-  },
-})
-
-// iOS iPhone
-const client = new HttpClient({
-  baseURL: 'https://api.example.com',
-  fingerprint: {
-    preset: 'SAFARI_IPHONE',
-  },
-})
-
-// iPad
-const client = new HttpClient({
-  baseURL: 'https://api.example.com',
-  fingerprint: {
-    preset: 'SAFARI_IPAD',
   },
 })
 ```
@@ -311,360 +189,199 @@ const client2 = new HttpClient({
 }) // Different fingerprint for user-2
 ```
 
-### With TLS Cipher Shuffling
+### Mobile Emulation
 
 ```typescript
+// Android
+const client = new HttpClient({
+  baseURL: 'https://api.example.com',
+  fingerprint: {
+    preset: 'CHROME_ANDROID',
+  },
+})
+
+// iOS
+const client = new HttpClient({
+  baseURL: 'https://api.example.com',
+  fingerprint: {
+    preset: 'SAFARI_IOS',
+  },
+})
+```
+
+### With Custom Locale
+
+```typescript
+// Vietnamese locale
 const client = new HttpClient({
   baseURL: 'https://api.example.com',
   fingerprint: {
     preset: 'CHROME_WINDOWS',
-    shuffleCiphers: true, // Randomize TLS fingerprint
+    locales: ['vi-VN', 'en-US'],
   },
 })
 ```
 
-### Full Stealth Mode
+### Direct Header Generation
 
 ```typescript
-const client = new HttpClient({
-  baseURL: 'https://api.example.com',
-  fingerprint: {
-    preset: 'CHROME_WINDOWS',
-    shuffleCiphers: true,
-  },
-  proxy: {
-    host: 'proxy.example.com',
-    port: 8080,
-    protocol: 'socks5',
-  },
-})
-```
-
----
-
-## Header Rotation
-
-Rotate fingerprint between requests to avoid pattern detection:
-
-### Basic Rotation
-
-```typescript
-const client = new HttpClient({
-  baseURL: 'https://api.example.com',
-  fingerprint: { preset: 'CHROME_WINDOWS' },
-})
-
-// Make first request
-await client.get('/page1')
-
-// Rotate headers (new User-Agent, sec-ch-ua, etc.)
-client.rotateFingerprintHeaders()
-
-// Make request with different fingerprint
-await client.get('/page2')
-```
-
-### Rotation per Request
-
-```typescript
-const urls = ['/page1', '/page2', '/page3', '/page4', '/page5']
-
-for (const url of urls) {
-  // Rotate before each request
-  client.rotateFingerprintHeaders()
-  await client.get(url)
-
-  // Add delay to appear more human
-  await delay(randomInt(1000, 3000))
-}
-```
-
-### Inspect Generated Headers
-
-```typescript
-// Generate headers without applying
-const headers = client.generateBrowserHeaders()
-console.log(headers)
-// {
-//   'user-agent': 'Mozilla/5.0 (Windows NT 10.0...',
-//   'sec-ch-ua': '"Chromium";v="131"...',
-//   ...
-// }
-```
-
----
-
-## TLS Fingerprint Evasion
-
-### How Cipher Shuffling Works
-
-```typescript
-import { createStealthAgent, getDefaultCiphers, getShuffledCiphers } from './http'
-
-// Default Node.js cipher order (always same = detectable)
-const defaultCiphers = getDefaultCiphers()
-console.log(defaultCiphers.slice(0, 5))
-// ['TLS_AES_256_GCM_SHA384', 'TLS_CHACHA20_POLY1305_SHA256', ...]
-
-// Shuffled ciphers (different each time)
-const shuffled1 = getShuffledCiphers()
-const shuffled2 = getShuffledCiphers()
-// shuffled1 !== shuffled2
-```
-
-### Create Stealth Agent Manually
-
-```typescript
-import axios from 'axios'
-import { createStealthAgent } from './http'
-
-// Create agent with shuffled ciphers
-const agent = createStealthAgent({
-  keepAlive: true,
-  timeout: 30000,
-})
-
-// Use with axios directly
-const response = await axios.get('https://api.example.com', {
-  httpsAgent: agent,
-})
-```
-
-### Check TLS Support
-
-```typescript
-import { isCipherShufflingSupported } from './http'
-
-if (isCipherShufflingSupported()) {
-  // Use cipher shuffling
-} else {
-  // Fallback (older Node.js)
-}
-```
-
----
-
-## Device Database
-
-### Android Devices (2024-2025)
-
-#### Samsung Galaxy
-
-| Model | Model Code | Series |
-|-------|------------|--------|
-| Galaxy S25 Ultra | SM-S938B | S25 (2025) |
-| Galaxy S25+ | SM-S936B | S25 (2025) |
-| Galaxy S25 | SM-S931B | S25 (2025) |
-| Galaxy S24 Ultra | SM-S928B | S24 (2024) |
-| Galaxy S24+ | SM-S926B | S24 (2024) |
-| Galaxy S24 | SM-S921B | S24 (2024) |
-| Galaxy Z Fold6 | SM-F956B | Foldable |
-| Galaxy Z Flip6 | SM-F741B | Foldable |
-| Galaxy A55 | SM-A556B | A Series |
-
-#### Google Pixel
-
-| Model | Model Code | Series |
-|-------|------------|--------|
-| Pixel 9 Pro XL | Pixel 9 Pro XL | 9 (2024) |
-| Pixel 9 Pro | Pixel 9 Pro | 9 (2024) |
-| Pixel 9 | Pixel 9 | 9 (2024) |
-| Pixel 9 Pro Fold | Pixel 9 Pro Fold | 9 (2024) |
-| Pixel 8 Pro | Pixel 8 Pro | 8 (2023) |
-| Pixel 8 | Pixel 8 | 8 (2023) |
-| Pixel 8a | Pixel 8a | 8 (2024) |
-
-#### Xiaomi
-
-| Model | Model Code | Series |
-|-------|------------|--------|
-| Xiaomi 15 Ultra | 2501FPN6DG | 15 (2025) |
-| Xiaomi 15 Pro | 24117RK66G | 15 (2024) |
-| Xiaomi 15 | 2410FPN6DG | 15 (2024) |
-| Xiaomi 14 Ultra | 24030PN60G | 14 (2024) |
-| Xiaomi 14 | 23127PN0CG | 14 (2024) |
-| Redmi Note 13 Pro+ | 2312DRAC8G | Redmi |
-
-#### Other Brands
-
-| Brand | Models |
-|-------|--------|
-| OnePlus | OnePlus 13, 12, 12R, 11, Nord 4, Open |
-| Oppo | Find X8 Ultra/Pro, Reno 12/11 |
-| Huawei | Mate 70/60 Pro, P60 Pro, Nova 12 |
-
-### iOS Devices (2024-2025)
-
-#### iPhone
-
-| Model | Model Code | Series |
-|-------|------------|--------|
-| iPhone 16 Pro Max | iPhone17,2 | 16 (2024) |
-| iPhone 16 Pro | iPhone17,1 | 16 (2024) |
-| iPhone 16 Plus | iPhone17,4 | 16 (2024) |
-| iPhone 16 | iPhone17,3 | 16 (2024) |
-| iPhone 15 Pro Max | iPhone16,2 | 15 (2023) |
-| iPhone 15 Pro | iPhone16,1 | 15 (2023) |
-| iPhone 15 Plus | iPhone15,5 | 15 (2023) |
-| iPhone 15 | iPhone15,4 | 15 (2023) |
-
-#### iPad
-
-| Model | Model Code | Series |
-|-------|------------|--------|
-| iPad Pro 13 M4 | iPad16,3 | Pro (2024) |
-| iPad Pro 11 M4 | iPad16,4 | Pro (2024) |
-| iPad Air 13 M2 | iPad14,10 | Air (2024) |
-| iPad Air 11 M2 | iPad14,8 | Air (2024) |
-| iPad (10th) | iPad13,18 | Base |
-| iPad mini (6th) | iPad14,1 | Mini |
-
-### OS Versions
-
-```typescript
-// Android versions (2024-2025)
-const ANDROID_VERSIONS = ['13', '14', '15']
-
-// iOS versions (2024-2025)
-const IOS_VERSIONS = ['17.0', '17.4', '17.5', '18.0', '18.2', '18.3', '18.4']
-```
-
----
-
-## Direct API Usage
-
-### Generate Headers Without HttpClient
-
-```typescript
-import { createHeaderGenerator, generateFromPreset, generateHeaders } from './http'
+import { generateFromPreset, generateHeaders } from './http'
 
 // From preset
-const headers = generateFromPreset('CHROME_WINDOWS')
+const headers = generateFromPreset('CHROME_WINDOWS', 'my-seed')
 
 // From config
 const headers = generateHeaders({
   enabled: true,
-  browsers: ['chrome'],
-  operatingSystems: ['windows'],
+  preset: 'CHROME_WINDOWS',
+  seed: 'my-seed',
 })
-```
-
-### Header Generator Instance
-
-```typescript
-import { createHeaderGenerator } from './http'
-
-const generator = createHeaderGenerator({
-  browsers: ['chrome', 'firefox'],
-  operatingSystems: ['windows', 'macos'],
-})
-
-// Generate multiple different headers
-const h1 = generator.generate() // Chrome/Windows
-const h2 = generator.generate() // Firefox/macOS
-const h3 = generator.generate() // Chrome/macOS
-
-// Generate from specific preset
-const h4 = generator.generateFromPreset('SAFARI_IPHONE')
-```
-
-### Query Presets
-
-```typescript
-import {
-  getPresetNames,
-  getPresetsByBrowser,
-  getPresetsByDevice,
-  getPresetsByOS
-} from './http'
-
-// All presets
-const all = getPresetNames()
-// ['CHROME_WINDOWS', 'CHROME_MACOS', 'SAFARI_IPHONE', ...]
-
-// Desktop only
-const desktop = getPresetsByDevice('desktop')
-// ['CHROME_WINDOWS', 'CHROME_MACOS', 'FIREFOX_WINDOWS', ...]
-
-// Mobile only
-const mobile = getPresetsByDevice('mobile')
-// ['CHROME_ANDROID', 'SAFARI_IOS', 'SAFARI_IPHONE', ...]
-
-// iOS presets
-const ios = getPresetsByOS('ios')
-// ['SAFARI_IOS', 'SAFARI_IPHONE', 'SAFARI_IPAD', 'CHROME_IOS']
-
-// Chrome presets
-const chrome = getPresetsByBrowser('chrome')
-// ['CHROME_WINDOWS', 'CHROME_MACOS', 'CHROME_ANDROID', ...]
-```
-
-### Query Devices
-
-```typescript
-import { getDeviceBrands, getDevicesByBrand, getRandomDevice } from './http'
-
-// Android brands
-const androidBrands = getDeviceBrands('android')
-// ['samsung', 'pixel', 'xiaomi', 'oppo', 'oneplus', 'huawei', 'generic']
-
-// iOS brands
-const iosBrands = getDeviceBrands('ios')
-// ['iphone', 'ipad']
-
-// Samsung devices
-const samsungDevices = getDevicesByBrand('samsung')
-// [{ model: 'Galaxy S25 Ultra', modelCode: 'SM-S938B' }, ...]
-
-// Random Samsung device
-const device = getRandomDevice('samsung')
-// { brand: 'samsung', model: 'Galaxy S24', modelCode: 'SM-S921B' }
 ```
 
 ---
 
-## Generated Headers Explained
+## Generated Headers
 
-### Chrome on Windows Example
+### Chrome Windows Example
 
 ```http
-user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
-accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8
-accept-language: en-US,en;q=0.9
-accept-encoding: gzip, deflate, br
-sec-ch-ua: "Not_A Brand";v="8", "Chromium";v="131", "Google Chrome";v="131"
+connection: keep-alive
+sec-ch-ua: "Not)A;Brand";v="8", "Chromium";v="139", "Google Chrome";v="139"
 sec-ch-ua-mobile: ?0
 sec-ch-ua-platform: "Windows"
+upgrade-insecure-requests: 1
+user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36
+accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+sec-fetch-site: none
+sec-fetch-mode: navigate
+sec-fetch-user: ?1
+sec-fetch-dest: document
+accept-encoding: gzip, deflate, br, zstd
+accept-language: en-US,en;q=0.9
+priority: u=0, i
+sec-ch-ua-full-version-list: "Not)A;Brand";v="8.0.0.0", "Chromium";v="139.0.7258.88", "Google Chrome";v="139.0.7258.88"
+```
+
+### Firefox Windows Example
+
+```http
+user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0
+accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+accept-language: en-US,en;q=0.9
+accept-encoding: gzip, deflate, br
+dnt: 1
+connection: keep-alive
+upgrade-insecure-requests: 1
 sec-fetch-dest: document
 sec-fetch-mode: navigate
 sec-fetch-site: none
 sec-fetch-user: ?1
-upgrade-insecure-requests: 1
-connection: keep-alive
+priority: u=0, i
 ```
 
-### Header Explanation
+### Safari macOS Example
 
-| Header | Purpose | Example |
-|--------|---------|---------|
-| `user-agent` | Browser/OS identification | Chrome/131 on Windows |
-| `sec-ch-ua` | Client Hints brand list | Chromium + Chrome versions |
-| `sec-ch-ua-mobile` | Mobile indicator | ?0 (desktop), ?1 (mobile) |
-| `sec-ch-ua-platform` | OS platform | "Windows", "Android" |
-| `sec-fetch-*` | Request context | navigate, document |
-| `accept` | Content preferences | HTML, images, etc. |
-| `accept-encoding` | Compression support | gzip, br |
-
-> **Note**: Advanced headers like `sec-ch-ua-model`, `sec-ch-ua-full-version-list`, `sec-ch-ua-platform-version`, `sec-ch-ua-arch` are NOT auto-generated. Use `client.setHeaders()` if server requires them.
+```http
+accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+accept-language: en-US,en;q=0.9
+accept-encoding: gzip, deflate, br
+connection: keep-alive
+user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15
+upgrade-insecure-requests: 1
+```
 
 ### Browser-Specific Differences
 
-| Browser | sec-ch-ua | DNT | Accept |
-|---------|-----------|-----|--------|
-| Chrome | Yes | No | Full MIME list |
-| Edge | Yes | No | Full MIME list |
-| Firefox | No | Yes | Shorter list |
-| Safari | No | No | Minimal list |
+| Header | Chrome | Firefox | Safari | Edge |
+|--------|--------|---------|--------|------|
+| sec-ch-ua | Yes | No | No | Yes |
+| sec-ch-ua-full-version-list | Yes | No | No | Yes |
+| sec-fetch-* | Yes | Yes | No | Yes |
+| priority | Yes | Yes | No | Yes |
+| dnt | No | Yes | No | No |
+| accept-encoding (zstd) | Yes | No | No | Yes |
+
+---
+
+## Seed System
+
+The seed system ensures consistent fingerprints for the same account:
+
+### How It Works
+
+```typescript
+// Same seed always produces same:
+// - Browser version (e.g., Chrome 139)
+// - Patch version (e.g., 139.0.7258.88)
+// - GREASE brand (e.g., "Not)A;Brand")
+
+const h1 = generateFromPreset('CHROME_WINDOWS', 'account@email.com')
+const h2 = generateFromPreset('CHROME_WINDOWS', 'account@email.com')
+// h1 === h2 (identical headers)
+
+const h3 = generateFromPreset('CHROME_WINDOWS', 'other@email.com')
+// h3 !== h1 (different version/patch)
+```
+
+### Why Use Seeds?
+
+| Without Seed | With Seed |
+|--------------|-----------|
+| Random version each time | Consistent version per account |
+| Bot detection: "Why does this user change browser every request?" | Natural: "Same user, same browser" |
+| Fingerprint changes on every request | Fingerprint persists across sessions |
+
+### Best Practice
+
+```typescript
+// Use account identifier as seed
+const client = new HttpClient({
+  fingerprint: {
+    preset: 'CHROME_WINDOWS',
+    seed: account.email, // or account.id
+  },
+})
+```
+
+---
+
+## Header Ordering
+
+Real browsers send headers in specific order. This module replicates browser-specific ordering:
+
+### Chrome Order
+
+```
+connection → sec-ch-ua → sec-ch-ua-mobile → sec-ch-ua-platform →
+upgrade-insecure-requests → user-agent → accept → sec-fetch-site →
+sec-fetch-mode → sec-fetch-user → sec-fetch-dest → accept-encoding →
+accept-language → priority → sec-ch-ua-full-version-list
+```
+
+### Firefox Order
+
+```
+user-agent → accept → accept-language → accept-encoding →
+dnt → connection → upgrade-insecure-requests → sec-fetch-dest →
+sec-fetch-mode → sec-fetch-site → sec-fetch-user → priority
+```
+
+### Safari Order
+
+```
+accept → accept-language → accept-encoding → connection →
+user-agent → upgrade-insecure-requests
+```
+
+### Why Order Matters
+
+Some bot detection systems check header order. Wrong order = detected as bot.
+
+```typescript
+// Generated headers are already properly ordered
+const headers = generateFromPreset('CHROME_WINDOWS')
+// Headers object maintains insertion order (ES2015+)
+```
 
 ---
 
@@ -678,37 +395,59 @@ connection: keep-alive
 | sec-ch-ua checking | ✅ Bypassed |
 | Missing headers detection | ✅ Bypassed |
 | Header order checking | ✅ Bypassed |
-| Basic JA3 fingerprint | ✅ Partial (cipher shuffling) |
+| Client Hints validation | ✅ Bypassed |
+| GREASE brand detection | ✅ Bypassed |
 
 ### What We CANNOT Bypass
 
 | Detection Method | Reason |
 |-----------------|--------|
-| JA4+ fingerprint | TLS extensions not controllable |
-| HTTP/2 fingerprint | Node.js limitation |
-| JavaScript challenges | No JS execution |
+| TLS/JA3/JA4 fingerprint | Node.js limitation - cannot control TLS handshake |
+| HTTP/2 fingerprint | Node.js uses HTTP/1.1 by default |
+| JavaScript challenges | No JS execution in HTTP client |
 | Canvas fingerprint | No browser rendering |
 | WebGL fingerprint | No browser rendering |
-| Behavioral analysis | Timing, mouse patterns |
+| Behavioral analysis | Timing, mouse patterns not applicable |
 
-### Recommendations
+### For Advanced Anti-Bot Systems
 
-For advanced anti-bot systems (Cloudflare, PerimeterX, DataDome):
+For Cloudflare, PerimeterX, DataDome, etc:
+
 1. Use real browser automation (Puppeteer, Playwright)
-2. Use residential proxies
-3. Add human-like delays and patterns
-4. Consider specialized services
+2. Use specialized libraries like `impit` or `curl-impersonate`
+3. Use residential proxies
+4. Add human-like delays and patterns
+
+### Sufficient For
+
+| Service | Status |
+|---------|--------|
+| Hotmail/Outlook | ✅ Works |
+| Gmail | ✅ Works |
+| Basic APIs | ✅ Works |
+| Simple websites | ✅ Works |
 
 ---
 
 ## Best Practices
 
-### 1. Match Fingerprint to Proxy Location
+### 1. Use Seed Per Account
+
+```typescript
+// Each account maintains its own identity
+const client = new HttpClient({
+  fingerprint: {
+    preset: 'CHROME_WINDOWS',
+    seed: account.email,
+  },
+})
+```
+
+### 2. Match Fingerprint to Proxy Location
 
 ```typescript
 // Vietnamese proxy → Vietnamese locale
 const client = new HttpClient({
-  baseURL: 'https://api.example.com',
   proxy: { host: 'vn-proxy.example.com', port: 8080 },
   fingerprint: {
     preset: 'CHROME_WINDOWS',
@@ -717,27 +456,17 @@ const client = new HttpClient({
 })
 ```
 
-### 2. Rotate Both Fingerprint and Proxy
-
-```typescript
-for (const url of urls) {
-  client.rotateFingerprintHeaders()
-  rotateProxy()
-  await client.get(url)
-  await delay(randomInt(2000, 5000))
-}
-```
-
 ### 3. Use Consistent Device Type
 
 ```typescript
 // Don't mix desktop and mobile in same session
-// BAD
-fingerprint: { browsers: ['chrome'], devices: ['desktop', 'mobile'] }
+// Choose one and stick with it
 
-// GOOD - choose one
-fingerprint: { preset: 'CHROME_WINDOWS' }  // desktop session
-fingerprint: { preset: 'CHROME_ANDROID' }  // mobile session
+// Desktop session
+fingerprint: { preset: 'CHROME_WINDOWS' }
+
+// Mobile session
+fingerprint: { preset: 'CHROME_ANDROID' }
 ```
 
 ### 4. Add Human-like Delays
@@ -745,7 +474,7 @@ fingerprint: { preset: 'CHROME_ANDROID' }  // mobile session
 ```typescript
 async function humanDelay() {
   const delay = Math.floor(Math.random() * 3000) + 1000 // 1-4 seconds
-  await new Promise((r) => setTimeout(r, delay))
+  await new Promise(r => setTimeout(r, delay))
 }
 
 for (const url of urls) {
@@ -754,16 +483,16 @@ for (const url of urls) {
 }
 ```
 
-### 5. Handle Blocks Gracefully
+### 5. Handle Detection Gracefully
 
 ```typescript
 try {
   await client.get(url)
 } catch (error) {
   if (error.statusCode === 403 || error.statusCode === 429) {
-    // Rotate fingerprint and retry
-    client.rotateFingerprintHeaders()
-    await delay(5000)
+    // Possibly detected - wait and retry with same fingerprint
+    // (don't change fingerprint as that looks even more suspicious)
+    await delay(30000)
     await client.get(url)
   }
 }

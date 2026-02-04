@@ -1,6 +1,6 @@
 import type { AxiosError, AxiosInstance } from 'axios'
-import { classifyError } from '../core'
-import type { HttpClientConfig, ResolvedLoggingConfig } from '../types'
+import { classifyError } from './errors'
+import type { HttpClientConfig, ResolvedLoggingConfig } from './types'
 
 /** Setup request and response interceptors */
 export function setupInterceptors(

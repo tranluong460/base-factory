@@ -2,7 +2,7 @@ import type { Agent } from 'node:http'
 import { HttpProxyAgent } from 'http-proxy-agent'
 import { HttpsProxyAgent } from 'https-proxy-agent'
 import { SocksProxyAgent } from 'socks-proxy-agent'
-import type { ProxyConfig } from '../types'
+import type { ProxyConfig } from './types'
 
 /** Proxy agents for HTTP and HTTPS */
 export interface ProxyAgents {

@@ -104,14 +104,13 @@ export function classifyError(error: AxiosError): HttpError {
   const message = (error.response.data as { message?: string })?.message || error.message
 
   // Classify by status code
-  if (status === 401) {
-    return new AuthenticationError(message, error)
-  }
-  if (status === 403) {
-    return new AuthorizationError(message, error)
-  }
-  if (status === 404) {
-    return new NotFoundError(message, error)
+  switch (status) {
+    case 401:
+      return new AuthenticationError(message, error)
+    case 403:
+      return new AuthorizationError(message, error)
+    case 404:
+      return new NotFoundError(message, error)
   }
 
   if (status >= 400 && status < 500) {
