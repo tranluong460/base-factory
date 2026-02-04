@@ -94,11 +94,11 @@ Websites can also fingerprint TLS handshake parameters:
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `getRandomDevice` | `getRandomDevice(brand: MobileDeviceBrand): MobileDeviceInfo` | Random device by brand |
-| `getRandomAndroidVersion` | `getRandomAndroidVersion(): string` | Random Android version |
-| `getRandomIOSVersion` | `getRandomIOSVersion(): string` | Random iOS version |
+| `getRandomDevice` | `getRandomDevice(brand: MobileDeviceBrand, seed?: string): MobileDeviceInfo` | Random device by brand (seeded) |
+| `getRandomAndroidVersion` | `getRandomAndroidVersion(device?: MobileDeviceInfo): string` | Random Android version |
+| `getRandomIOSVersion` | `getRandomIOSVersion(device?: MobileDeviceInfo): string` | Random iOS version |
 | `getDeviceBrands` | `getDeviceBrands(platform: 'android' \| 'ios'): MobileDeviceBrand[]` | List brands |
-| `getDevicesByBrand` | `getDevicesByBrand(brand: MobileDeviceBrand): DeviceInfo[]` | List devices |
+| `getDevicesByBrand` | `getDevicesByBrand(brand: MobileDeviceBrand): DeviceSpec[] \| IOSDeviceSpec[]` | List devices |
 
 ### TLS Functions
 
@@ -176,6 +176,13 @@ interface FingerprintConfig {
 
   /** TLS cipher shuffling */
   shuffleCiphers?: boolean
+
+  /**
+   * Seed for consistent fingerprint generation.
+   * Same seed = same fingerprint every time.
+   * Useful for maintaining consistent identity per account/session.
+   */
+  seed?: string
 }
 ```
 
@@ -280,6 +287,28 @@ const client = new HttpClient({
     preset: 'SAFARI_IPAD',
   },
 })
+```
+
+### With Consistent Fingerprint (Seed)
+
+```typescript
+// Same seed = same fingerprint every time
+const client = new HttpClient({
+  baseURL: 'https://api.example.com',
+  fingerprint: {
+    preset: 'CHROME_WINDOWS',
+    seed: 'account-123@email.com', // Use account ID as seed
+  },
+})
+
+// Each account gets unique but consistent fingerprint
+const client1 = new HttpClient({
+  fingerprint: { preset: 'CHROME_WINDOWS', seed: 'user-1' },
+}) // Always same fingerprint for user-1
+
+const client2 = new HttpClient({
+  fingerprint: { preset: 'CHROME_WINDOWS', seed: 'user-2' },
+}) // Different fingerprint for user-2
 ```
 
 ### With TLS Cipher Shuffling
@@ -493,10 +522,10 @@ if (isCipherShufflingSupported()) {
 ### OS Versions
 
 ```typescript
-// Android versions
-const ANDROID_VERSIONS = ['13', '14', '15', '16']
+// Android versions (2024-2025)
+const ANDROID_VERSIONS = ['13', '14', '15']
 
-// iOS versions
+// iOS versions (2024-2025)
 const IOS_VERSIONS = ['17.0', '17.4', '17.5', '18.0', '18.2', '18.3', '18.4']
 ```
 
@@ -622,10 +651,11 @@ connection: keep-alive
 | `sec-ch-ua` | Client Hints brand list | Chromium + Chrome versions |
 | `sec-ch-ua-mobile` | Mobile indicator | ?0 (desktop), ?1 (mobile) |
 | `sec-ch-ua-platform` | OS platform | "Windows", "Android" |
-| `sec-ch-ua-model` | Device model (mobile) | "SM-S928B" |
 | `sec-fetch-*` | Request context | navigate, document |
 | `accept` | Content preferences | HTML, images, etc. |
 | `accept-encoding` | Compression support | gzip, br |
+
+> **Note**: Advanced headers like `sec-ch-ua-model`, `sec-ch-ua-full-version-list`, `sec-ch-ua-platform-version`, `sec-ch-ua-arch` are NOT auto-generated. Use `client.setHeaders()` if server requires them.
 
 ### Browser-Specific Differences
 

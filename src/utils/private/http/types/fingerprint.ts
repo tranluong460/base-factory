@@ -69,6 +69,13 @@ export interface FingerprintConfig {
   locales?: string[]
   /** Shuffle TLS ciphers for partial fingerprint evasion */
   shuffleCiphers?: boolean
+  /**
+   * Seed for consistent fingerprint generation.
+   * Same seed always produces the same fingerprint.
+   * Useful for maintaining consistent identity per account/session.
+   * If not provided, random fingerprint is generated each time.
+   */
+  seed?: string
 }
 
 /** Generated browser headers */
@@ -80,7 +87,6 @@ export interface BrowserHeaders {
   'sec-ch-ua'?: string
   'sec-ch-ua-mobile'?: string
   'sec-ch-ua-platform'?: string
-  'sec-ch-ua-model'?: string
   'sec-fetch-dest'?: string
   'sec-fetch-mode'?: string
   'sec-fetch-site'?: string
@@ -88,7 +94,20 @@ export interface BrowserHeaders {
   'upgrade-insecure-requests'?: string
   'dnt'?: string
   'connection'?: string
+  /** Allow custom headers via setHeaders() */
   [key: string]: string | undefined
+}
+
+/** Screen specifications for realistic device fingerprinting */
+export interface ScreenSpecs {
+  /** Screen width in pixels */
+  width: number
+  /** Screen height in pixels */
+  height: number
+  /** Display density (e.g., 2.0, 2.75, 3.0) */
+  density: number
+  /** DPI value (e.g., 420, 480, 560) */
+  dpi: number
 }
 
 /** Mobile device info */
@@ -97,6 +116,14 @@ export interface MobileDeviceInfo {
   model: string
   /** Android: 'SM-S918B', iOS: 'iPhone15,2' */
   modelCode: string
+  /** Screen specifications for realistic fingerprinting */
+  screen?: ScreenSpecs
+  /** Supported OS versions (e.g., Android: ['14', '15'], iOS: ['18.0', '18.2']) */
+  osVersions?: string[]
+  /** CPU architecture (e.g., 'arm64-v8a', 'armeabi-v7a') */
+  cpuArch?: string
+  /** Device release year for version compatibility */
+  releaseYear?: number
 }
 
 /** Browser info for header generation */
