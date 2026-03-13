@@ -29,7 +29,8 @@
     // Interop Constraints (alphabetical)
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
   "exclude": ["**/*.test.ts", "test/**", "node_modules", "dist"]
