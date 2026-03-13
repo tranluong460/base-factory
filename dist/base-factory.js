@@ -25,11 +25,6 @@ class u {
     }
   }
 }
-class I {
-  static async getProvider(t) {
-    return await u.loadPlugin(t.type), o.getFactory(t.type).create(t);
-  }
-}
 class o {
   static factories = /* @__PURE__ */ new Map();
   static register(t, a) {
@@ -43,6 +38,11 @@ class o {
   }
   static listProviders() {
     return Array.from(this.factories.keys());
+  }
+}
+class I {
+  static async getProvider(t) {
+    return await u.loadPlugin(t.type), o.getFactory(t.type).create(t);
   }
 }
 const g = {
@@ -223,8 +223,6 @@ export {
   M as EN,
   i as EnumLabsProvider,
   C as KO,
-  u as LabsPluginLoader,
   I as LabsProviderFacade,
-  o as LabsProviderRegistry,
   F as VI
 };

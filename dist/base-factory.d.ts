@@ -74,19 +74,8 @@ export declare const KO: {
     }
 };
 
-export declare class LabsPluginLoader {
-    static loadPlugin(providerId: EnumLabsProvider): Promise<void>;
-}
-
 export declare class LabsProviderFacade {
     static getProvider<T extends EnumLabsProvider>(payload: IPayloadProvider<T>): Promise<ProviderTypeMap[T]>;
-}
-
-export declare class LabsProviderRegistry {
-    private static factories;
-    static register(type: EnumLabsProvider, factory: ILabsProviderFactory): void;
-    static getFactory(type: EnumLabsProvider): ILabsProviderFactory;
-    static listProviders(): string[];
 }
 
 export declare interface PayloadConfigMap {

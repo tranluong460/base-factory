@@ -1,4 +1,4 @@
-import { LabsProviderRegistry } from '../../core'
+import { LabsProviderRegistry } from '../../core/LabsProviderRegistry'
 import { EnumLabsProvider } from '../../utils'
 import { AutomatedFactory } from './factory'
 
