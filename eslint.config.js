@@ -18,7 +18,8 @@ export default antfu(
       'style/brace-style': ['error', '1tbs'],
       'style/arrow-parens': ['error', 'always'],
       'curly': ['error', 'all'],
-      'antfu/consistent-list-newline': 'off', 'no-console': 'off',
+      'antfu/consistent-list-newline': 'off',
+      'no-console': 'off',
     },
   },
   {
