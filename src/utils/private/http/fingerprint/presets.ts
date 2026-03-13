@@ -82,7 +82,7 @@ export function getPreset(name: FingerprintPreset): PresetData {
 }
 
 /** Get Chrome patch version */
-export function getChromePatch(majorVersion: number, seed?: string): string {
+export function getChromePatch(majorVersion: number, seed?: string): string | undefined {
   const patches = CHROME_PATCHES[majorVersion]
   if (!patches?.length) {
     return `${majorVersion}.0.0.0`

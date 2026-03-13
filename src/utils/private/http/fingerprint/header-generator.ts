@@ -12,7 +12,7 @@ import { getChromePatch, getGreaseBrand, getPreset } from './presets'
 
 interface Random {
   int: (min: number, max: number) => number
-  item: <T>(arr: readonly T[]) => T
+  item: <T>(arr: readonly T[]) => T | undefined
 }
 
 function createRandom(seed?: string): Random {
