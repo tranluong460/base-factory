@@ -1,0 +1,83 @@
+name: Update Version and Sync to Prod
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  # JOB 1: Tăng version và cập nhật ngày tháng trên nhánh main
+  bump-version:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update package.json 🆙
+        id: update_pkg
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Tăng version
+          npm version patch --no-git-tag-version
+          
+          # Cập nhật lastUpdated
+          CURRENT_DATE=$(date +'%d/%m/%Y')
+          jq ".lastUpdated = \"$CURRENT_DATE\"" package.json > temp.json && mv temp.json package.json
+          
+          # Lưu version mới
+          NEW_VER=$(jq -r .version package.json)
+          echo "VERSION=$NEW_VER" >> $GITHUB_OUTPUT
+          
+          git add package.json
+          git commit -m "chore: bump version to $NEW_VER [skip ci]"
+          git push origin main
+
+
+  # JOB 2: Copy dist và các file liên quan sang nhánh prod
+  deploy-prod:
+    needs: bump-version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      # Lấy version để dùng làm commit message
+      - name: Get Version
+        id: get_version
+        run: |
+          VERSION=$(jq -r .version package.json)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Prepare Prod Folder 📂
+        run: |
+          mkdir -p out/dist
+          
+          if [ -d "dist" ]; then cp -r dist/* out/dist/; fi
+          
+          cp package.json out/
+          cp README.md out/
+          cp LICENSE out/ || echo "No LICENSE found"
+          cp .gitignore out/
+          
+          if [ -d "docs" ]; then cp -r docs out/docs; fi
+
+      - name: Deploy to Prod Branch 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: out
+          branch: prod
+          clean: true
+          commit-message: ${{ steps.get_version.outputs.VERSION }}
