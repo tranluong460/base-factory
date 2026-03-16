@@ -1,0 +1,118 @@
+{
+  "name": "@vitechgroup/base-factory",
+  "type": "module",
+  "version": "1.0.6",
+  "private": true,
+  "packageManager": "yarn@1.22.22",
+  "description": "Base Factory - Base factory for VitechGroup",
+  "author": {
+    "name": "VitechGroup",
+    "email": "dev@vitechgroup.com",
+    "url": "https://vitechgroup.com"
+  },
+  "license": "MIT",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/VitechGroup"
+  },
+  "homepage": "https://github.com/VitechGroup/base-factory#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VitechGroup/base-factory.git"
+  },
+  "bugs": {
+    "url": "https://github.com/VitechGroup/base-factory/issues"
+  },
+  "keywords": [
+    "base",
+    "factory",
+    "base-factory"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": "./dist/base-factory.js",
+      "require": "./dist/base-factory.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/base-factory.cjs",
+  "module": "./dist/base-factory.js",
+  "types": "./dist/base-factory.d.ts",
+  "files": [
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md",
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "lastUpdated": "16/03/2026",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --fix",
+    "lint:check": "eslint .",
+    "format": "prettier --write 'src/**/*.{ts,tsx}'",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx}'",
+    "flint": "npm run format && npm run lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest --coverage",
+    "test:ui": "vitest --ui",
+    "release": "npm run test && npm run build && changelogen --release --push",
+    "prepublishOnly": "npm run build",
+    "prepare": "husky",
+    "clean": "rm -rf dist node_modules/.vite",
+    "nuke": "rm -rf node_modules dist && yarn install"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "http-proxy-agent": "^7.0.2",
+    "https-proxy-agent": "^7.0.6",
+    "socks-proxy-agent": "^8.0.5"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^2.9.0",
+    "@commitlint/cli": "^20.4.4",
+    "@commitlint/config-conventional": "^20.4.4",
+    "@types/node": "^20.16.12",
+    "@vitechgroup/mkt-elec-core": "https://github.com/VitechGroup/mkt-elec-core.git#dev",
+    "@vitest/coverage-v8": "^1.6.0",
+    "camelcase": "^8.0.0",
+    "changelogen": "^0.5.7",
+    "eslint": "^8.57.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.3.2",
+    "typescript": "^5.6.3",
+    "vite": "^5.3.1",
+    "vite-plugin-dts": "^4.2.4",
+    "vitest": "^1.6.0"
+  },
+  "resolutions": {
+    "eslint-plugin-unicorn": "^56.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  }
+}
