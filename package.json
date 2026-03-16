@@ -31,7 +31,6 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "types": "./dist/base-factory.d.ts",
       "import": "./dist/base-factory.js",
       "require": "./dist/base-factory.cjs"
     },
@@ -40,13 +39,6 @@
   "main": "./dist/base-factory.cjs",
   "module": "./dist/base-factory.js",
   "types": "./dist/base-factory.d.ts",
-  "typesVersions": {
-    ">=5.0": {
-      "*": [
-        "./dist/base-factory.d.ts"
-      ]
-    }
-  },
   "files": [
     "CHANGELOG.md",
     "LICENSE",
