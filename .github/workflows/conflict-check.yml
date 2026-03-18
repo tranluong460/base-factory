@@ -1,0 +1,68 @@
+name: Conflict Check
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check-conflicts:
+    name: Check Open PRs for Conflicts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check and label conflicting PRs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pullRequests } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+
+            for (const pr of pullRequests) {
+              // Get fresh PR data with mergeable status
+              const { data: freshPr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+              });
+
+              const labels = freshPr.labels.map(l => l.name);
+              const hasConflictLabel = labels.includes('conflict');
+
+              if (freshPr.mergeable === false && !hasConflictLabel) {
+                // Add conflict label
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  labels: ['conflict'],
+                });
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `⚠️ This PR has merge conflicts with \`${freshPr.base.ref}\`. Please rebase or merge the latest changes.`,
+                });
+              } else if (freshPr.mergeable === true && hasConflictLabel) {
+                // Remove conflict label
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: pr.number,
+                    name: 'conflict',
+                  });
+                } catch (e) {
+                  // Label might already be removed
+                }
+              }
+            }

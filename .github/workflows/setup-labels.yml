@@ -1,0 +1,66 @@
+name: Setup Labels
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/setup-labels.yml'
+
+jobs:
+  create-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create/Update labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = [
+              // By files
+              { name: 'backend', color: '5319e7', description: 'Changes in src/main/' },
+              { name: 'frontend', color: '1d76db', description: 'Changes in src/renderer/' },
+              { name: 'preload', color: '0e8a16', description: 'Changes in src/preload/' },
+              { name: 'database', color: 'fbca04', description: 'Changes in database entities/models' },
+              { name: 'ipc', color: 'ff6600', description: 'Changes in IPC handlers/proxies' },
+              { name: 'worker', color: 'b60205', description: 'Changes in worker threads' },
+              { name: 'mkt-core', color: 'd93f0b', description: 'Changes in mkt-core submodule' },
+              { name: 'docs', color: '0075ca', description: 'Documentation changes' },
+              { name: 'config', color: 'e4e669', description: 'Configuration changes' },
+              { name: 'ci', color: 'bfdadc', description: 'CI/CD workflow changes' },
+
+              // By size
+              { name: 'size/XS', color: '3CBF00', description: '< 10 lines changed' },
+              { name: 'size/S', color: '5D9801', description: '< 50 lines changed' },
+              { name: 'size/M', color: '7F7203', description: '< 200 lines changed' },
+              { name: 'size/L', color: 'A14C05', description: '< 500 lines changed' },
+              { name: 'size/XL', color: 'C32607', description: '500+ lines changed' },
+
+              // By type
+              { name: 'feature', color: 'a2eeef', description: 'New feature' },
+              { name: 'fix', color: 'd73a4a', description: 'Bug fix' },
+              { name: 'bugfix', color: 'd73a4a', description: 'Bug fix' },
+              { name: 'breaking', color: 'b60205', description: 'Breaking change' },
+              { name: 'security', color: 'ee0701', description: 'Security issue' },
+              { name: 'conflict', color: 'ff0000', description: 'Has merge conflicts' },
+            ];
+
+            for (const label of labels) {
+              try {
+                await github.rest.issues.updateLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                  color: label.color,
+                  description: label.description,
+                });
+                console.log(`Updated: ${label.name}`);
+              } catch {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                  color: label.color,
+                  description: label.description,
+                });
+                console.log(`Created: ${label.name}`);
+              }
+            }

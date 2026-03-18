@@ -44,7 +44,7 @@ bower_components/
 bun.lockb
 
 # ======================== BUILD OUTPUT ======================
-dist/
+# dist/
 build/
 out/
 .output/
@@ -227,3 +227,4 @@ docker-compose.override.yml
 # ======================== PROJECT SPECIFIC ==================
 example/
 *.local
+CLAUDE.md

@@ -1,0 +1,59 @@
+# Config for actions/labeler — labels PRs based on changed files
+
+backend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/main/**'
+
+frontend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/renderer/**'
+
+preload:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/preload/**'
+
+database:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/main/database/**'
+
+ipc:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/main/ipc/**'
+          - 'src/preload/ipc/**'
+
+worker:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/main/nodejs/worker/**'
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'
+          - 'docs/**'
+
+config:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '*.json'
+          - '*.yml'
+          - '*.yaml'
+          - '*.config.*'
+          - '.eslintrc*'
+          - '.prettierrc*'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/**'
+
+mkt-core:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/main/mkt-core/**'
+          - 'src/renderer/src/mkt-core/**'

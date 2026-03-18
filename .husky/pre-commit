@@ -1,3 +1,2 @@
 npm run flint
-
-git add .
+npm run typecheck
