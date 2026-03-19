@@ -1,35 +1,15 @@
 # Config for actions/labeler — labels PRs based on changed files
+# Generic config reusable across multiple projects
+# Labels only apply if matching files exist in the repo
 
-backend:
+# ──────────────────────────────────────────────
+# Generic (all projects)
+# ──────────────────────────────────────────────
+
+source:
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/main/**'
-
-frontend:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'src/renderer/**'
-
-preload:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'src/preload/**'
-
-database:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'src/main/database/**'
-
-ipc:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'src/main/ipc/**'
-          - 'src/preload/ipc/**'
-
-worker:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'src/main/nodejs/worker/**'
+          - 'src/**'
 
 docs:
   - changed-files:
@@ -52,8 +32,51 @@ ci:
       - any-glob-to-any-file:
           - '.github/**'
 
-mkt-core:
+tests:
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/main/mkt-core/**'
-          - 'src/renderer/src/mkt-core/**'
+          - 'test/**'
+          - 'tests/**'
+          - '**/*.test.*'
+          - '**/*.spec.*'
+
+build:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'vite.config.*'
+          - 'webpack.config.*'
+          - 'rollup.config.*'
+          - 'tsconfig*.json'
+          - 'build/**'
+          - 'Dockerfile*'
+          - 'docker-compose*'
+
+# ──────────────────────────────────────────────
+# Electron app (mkt-care, etc.)
+# Only triggers if the repo has these directories
+# ──────────────────────────────────────────────
+
+main:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/main/**'
+
+renderer:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/renderer/**'
+
+preload:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/preload/**'
+
+database:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/main/database/**'
+
+worker:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/main/nodejs/worker/**'

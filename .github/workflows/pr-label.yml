@@ -4,6 +4,8 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, edited]
+  pull_request_review:
+    types: [submitted]
 
 permissions:
   contents: read
@@ -13,6 +15,7 @@ jobs:
   label-by-files:
     name: Label by Changed Files
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/labeler@v5
         with:
@@ -21,6 +24,7 @@ jobs:
   label-by-size:
     name: Label by PR Size
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - name: Label PR size
         uses: actions/github-script@v7
@@ -34,13 +38,15 @@ jobs:
 
             const changes = files.reduce((sum, f) => sum + f.additions + f.deletions, 0);
 
-            const sizeLabels = ['size/XS', 'size/S', 'size/M', 'size/L', 'size/XL'];
+            const sizeLabels = ['size/XS', 'size/S', 'size/M', 'size/L', 'size/XL', 'size/XXL', 'size/XXXL'];
             let label;
             if (changes < 10) label = 'size/XS';
             else if (changes < 50) label = 'size/S';
             else if (changes < 200) label = 'size/M';
             else if (changes < 500) label = 'size/L';
-            else label = 'size/XL';
+            else if (changes < 1000) label = 'size/XL';
+            else if (changes < 2000) label = 'size/XXL';
+            else label = 'size/XXXL';
 
             // Remove old size labels
             const currentLabels = (await github.rest.issues.listLabelsOnIssue({
@@ -68,12 +74,145 @@ jobs:
               labels: [label],
             });
 
-            // Warn on XL PRs
-            if (label === 'size/XL') {
+            // Warn on large PRs
+            if (['size/XL', 'size/XXL', 'size/XXXL'].includes(label)) {
+              const emoji = label === 'size/XXXL' ? '🚨' : '⚠️';
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: `⚠️ **Large PR detected** (${changes} lines changed). Consider splitting into smaller PRs for easier review.`,
+                body: `${emoji} **Large PR detected** (${changes} lines changed). Consider splitting into smaller PRs for easier review.`,
+              });
+            }
+
+  label-by-type:
+    name: Label by Branch/Title Type
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    steps:
+      - name: Auto label by type
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const branch = pr.head.ref;
+            const title = pr.title.toLowerCase();
+
+            const typeMap = {
+              'type/feature':  [/^feat(ure)?[\/-]/i, /^feat(\(.+\))?:/i],
+              'type/bugfix':   [/^fix[\/-]/i, /^bugfix[\/-]/i, /^fix(\(.+\))?:/i],
+              'type/hotfix':   [/^hotfix[\/-]/i],
+              'type/refactor': [/^refactor[\/-]/i, /^refactor(\(.+\))?:/i],
+              'type/chore':    [/^chore[\/-]/i, /^chore(\(.+\))?:/i],
+              'type/docs':     [/^docs[\/-]/i, /^docs(\(.+\))?:/i],
+              'type/test':     [/^test[\/-]/i, /^test(\(.+\))?:/i],
+            };
+
+            const labelsToAdd = [];
+
+            for (const [label, patterns] of Object.entries(typeMap)) {
+              for (const pattern of patterns) {
+                if (pattern.test(branch) || pattern.test(title)) {
+                  labelsToAdd.push(label);
+                  break;
+                }
+              }
+            }
+
+            // Detect breaking change
+            if (/breaking[-\s]?change/i.test(title) || /^.*!:/.test(title)) {
+              labelsToAdd.push('breaking-change');
+            }
+
+            // Detect dependencies
+            if (/^deps[\/-]/i.test(branch) || /^chore\(deps\)/i.test(title) || /dependabot/i.test(branch)) {
+              labelsToAdd.push('dependencies');
+            }
+
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labelsToAdd,
+              });
+            }
+
+  label-by-priority:
+    name: Label by Priority
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    steps:
+      - name: Auto label priority
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const branch = pr.head.ref;
+            const title = pr.title.toLowerCase();
+            const body = (pr.body || '').toLowerCase();
+
+            let priority = null;
+
+            // Critical: hotfix or title/body contains critical/urgent
+            if (/^hotfix[\/-]/i.test(branch) || /\b(critical|urgent)\b/.test(title)) {
+              priority = 'priority/critical';
+            }
+            // High: fix branches or security mentions
+            else if (/^fix[\/-]/i.test(branch) || /\bsecurity\b/.test(title)) {
+              priority = 'priority/high';
+            }
+
+            if (priority) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: [priority],
+              });
+            }
+
+  label-by-review:
+    name: Label by Review Status
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_review'
+    steps:
+      - name: Update review labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const reviewState = context.payload.review.state;
+            const issue_number = context.payload.pull_request.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const reviewLabels = ['needs-review', 'changes-requested', 'approved'];
+
+            // Get current labels
+            const currentLabels = (await github.rest.issues.listLabelsOnIssue({
+              owner, repo, issue_number,
+            })).data.map(l => l.name);
+
+            // Remove old review labels
+            for (const old of reviewLabels) {
+              if (currentLabels.includes(old)) {
+                await github.rest.issues.removeLabel({
+                  owner, repo, issue_number, name: old,
+                });
+              }
+            }
+
+            // Add new review label
+            let newLabel = null;
+            if (reviewState === 'approved') {
+              newLabel = 'approved';
+            } else if (reviewState === 'changes_requested') {
+              newLabel = 'changes-requested';
+            }
+
+            if (newLabel) {
+              await github.rest.issues.addLabels({
+                owner, repo, issue_number,
+                labels: [newLabel],
               });
             }

@@ -53,6 +53,10 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      # Đợi commit mới nhất available
+      - name: Pull latest
+        run: git pull origin main
+
       # Lấy version để dùng làm commit message
       - name: Get Version
         id: get_version
