@@ -24,22 +24,21 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           # Tăng version
           npm version patch --no-git-tag-version
-          
+
           # Cập nhật lastUpdated
-          CURRENT_DATE=$(date +'%d/%m/%Y')
+          CURRENT_DATE=$(TZ='Asia/Ho_Chi_Minh' date +'%d/%m/%Y')
           jq ".lastUpdated = \"$CURRENT_DATE\"" package.json > temp.json && mv temp.json package.json
-          
+
           # Lưu version mới
           NEW_VER=$(jq -r .version package.json)
           echo "VERSION=$NEW_VER" >> $GITHUB_OUTPUT
-          
+
           git add package.json
           git commit -m "chore: bump version to $NEW_VER [skip ci]"
           git push origin main
-
 
   # JOB 2: Copy dist và các file liên quan sang nhánh prod
   deploy-prod:
@@ -64,14 +63,14 @@ jobs:
       - name: Prepare Prod Folder 📂
         run: |
           mkdir -p out/dist
-          
+
           if [ -d "dist" ]; then cp -r dist/* out/dist/; fi
-          
+
           cp package.json out/
           cp README.md out/
           cp LICENSE out/ || echo "No LICENSE found"
           cp .gitignore out/
-          
+
           if [ -d "docs" ]; then cp -r docs out/docs; fi
 
       - name: Deploy to Prod Branch 🚀
