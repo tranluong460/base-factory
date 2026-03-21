@@ -25,8 +25,19 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Tăng version
-          npm version patch --no-git-tag-version
+          # Tăng version (smart bump: patch>=9 → minor, minor>=9 & patch>=9 → major)
+          CURRENT_VER=$(jq -r .version package.json)
+          MAJOR=$(echo "$CURRENT_VER" | cut -d. -f1)
+          MINOR=$(echo "$CURRENT_VER" | cut -d. -f2)
+          PATCH=$(echo "$CURRENT_VER" | cut -d. -f3)
+
+          if [ "$MINOR" -ge 9 ] && [ "$PATCH" -ge 9 ]; then
+            npm version major --no-git-tag-version
+          elif [ "$PATCH" -ge 9 ]; then
+            npm version minor --no-git-tag-version
+          else
+            npm version patch --no-git-tag-version
+          fi
 
           # Cập nhật lastUpdated
           CURRENT_DATE=$(TZ='Asia/Ho_Chi_Minh' date +'%d/%m/%Y')
