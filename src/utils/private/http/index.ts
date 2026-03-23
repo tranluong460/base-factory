@@ -16,6 +16,7 @@ export type {
   IRequestHooks,
   IResponseHookInfo,
   ISessionConfig,
+  ITimingPolicy,
 } from './core'
 export {
   AuthenticationError,

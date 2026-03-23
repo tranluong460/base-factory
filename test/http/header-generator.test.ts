@@ -320,7 +320,7 @@ describe('buildSecFetchHeaders', () => {
     expect(headers.priority).toBe('u=0, i')
   })
 
-  it('returns cors mode for non-navigation context', () => {
+  it('returns cors mode for XHR/fetch (empty) context', () => {
     const headers = buildSecFetchHeaders({
       isNavigation: false,
       isUserInitiated: false,
@@ -331,7 +331,48 @@ describe('buildSecFetchHeaders', () => {
     expect(headers['sec-fetch-mode']).toBe('cors')
     expect(headers['sec-fetch-user']).toBeUndefined()
     expect(headers['sec-fetch-dest']).toBe('empty')
+    expect(headers.accept).toBe('*/*')
     expect(headers.priority).toBe('u=1')
+  })
+
+  it('returns no-cors mode for image/style/script sub-resources', () => {
+    const imageHeaders = buildSecFetchHeaders({
+      isNavigation: false,
+      isUserInitiated: false,
+      targetSite: 'same-origin',
+      destination: 'image',
+    })
+    expect(imageHeaders['sec-fetch-mode']).toBe('no-cors')
+    expect(imageHeaders.accept).toBe('image/avif,image/webp,image/apng,image/*,*/*;q=0.8')
+
+    const styleHeaders = buildSecFetchHeaders({
+      isNavigation: false,
+      isUserInitiated: false,
+      targetSite: 'same-origin',
+      destination: 'style',
+    })
+    expect(styleHeaders['sec-fetch-mode']).toBe('no-cors')
+    expect(styleHeaders.accept).toBe('text/css,*/*;q=0.1')
+
+    const scriptHeaders = buildSecFetchHeaders({
+      isNavigation: false,
+      isUserInitiated: false,
+      targetSite: 'same-origin',
+      destination: 'script',
+    })
+    expect(scriptHeaders['sec-fetch-mode']).toBe('no-cors')
+    expect(scriptHeaders.accept).toBe('*/*')
+  })
+
+  it('returns cors mode for font sub-resources', () => {
+    const headers = buildSecFetchHeaders({
+      isNavigation: false,
+      isUserInitiated: false,
+      targetSite: 'same-origin',
+      destination: 'font',
+    })
+    expect(headers['sec-fetch-mode']).toBe('cors')
+    expect(headers.accept).toBe('*/*')
   })
 
   it('does not include sec-fetch-user for non-user-initiated navigation', () => {

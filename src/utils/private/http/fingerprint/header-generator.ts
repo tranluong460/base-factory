@@ -64,15 +64,41 @@ export function buildSecFetchHeaders(context?: IRequestContext): Record<string, 
     destination: 'document',
   }
 
+  // sec-fetch-mode per resource type (matches real Chrome behavior)
+  const modeMap: Record<string, string> = {
+    document: 'navigate',
+    style: 'no-cors',
+    script: 'no-cors',
+    image: 'no-cors',
+    font: 'cors',
+    empty: 'cors', // XHR/fetch
+    iframe: 'navigate',
+  }
+
   const headers: Record<string, string> = {
     'sec-fetch-site': ctx.targetSite,
-    'sec-fetch-mode': ctx.isNavigation ? 'navigate' : 'cors',
+    'sec-fetch-mode': ctx.isNavigation ? 'navigate' : (modeMap[ctx.destination] ?? 'cors'),
     'sec-fetch-dest': ctx.destination,
   }
 
   // sec-fetch-user is ONLY set on user-initiated navigations
   if (ctx.isNavigation && ctx.isUserInitiated) {
     headers['sec-fetch-user'] = '?1'
+  }
+
+  // Accept header per resource type (browsers send different Accept for each)
+  const acceptMap: Record<string, string> = {
+    document:
+      'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    image: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+    style: 'text/css,*/*;q=0.1',
+    script: '*/*',
+    font: '*/*',
+    empty: '*/*',
+  }
+  const accept = acceptMap[ctx.destination]
+  if (accept) {
+    headers.accept = accept
   }
 
   // Dynamic priority per resource type (RFC 9218)

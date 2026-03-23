@@ -154,38 +154,82 @@ export function getSupportedCountryCodes(): string[] {
 
 // ─── Navigation Flow ──────────────────────────────────────────
 
+interface IRequestContext {
+  isNavigation: boolean
+  isUserInitiated: boolean
+  targetSite: 'none' | 'same-origin' | 'same-site' | 'cross-site'
+  destination: 'document' | 'empty' | 'image' | 'script' | 'style' | 'font' | 'iframe'
+}
+
 interface INavigationStep<T> {
   url: string
   method?: string
   data?: unknown
+  /** Override auto-inferred context. By default, context is inferred from step position and URLs. */
+  context?: IRequestContext
   /** Delay before this step. Defaults to navigationDelay (1-3s). */
   delayMs?: { min: number, max: number }
   /** Called after request completes. Return value is collected in results. */
   onResponse?: (response: T) => unknown
 }
 
+/** Infer sec-fetch-site from previous URL and current URL */
+function inferTargetSite(
+  previousUrl: string | undefined,
+  currentUrl: string,
+): IRequestContext['targetSite'] {
+  if (!previousUrl) {
+    return 'none'
+  }
+  try {
+    const prev = new URL(previousUrl)
+    const curr = new URL(currentUrl)
+    if (prev.origin === curr.origin) {
+      return 'same-origin'
+    }
+    // Extract registrable domain (simplified: compare last 2 parts)
+    const prevParts = prev.hostname.split('.').slice(-2).join('.')
+    const currParts = curr.hostname.split('.').slice(-2).join('.')
+    if (prevParts === currParts) {
+      return 'same-site'
+    }
+    return 'cross-site'
+  } catch {
+    return 'none'
+  }
+}
+
 /**
  * Execute a sequence of requests simulating real user navigation.
- * Automatically adds delays between requests and builds Referer chain.
+ * Automatically infers sec-fetch context, adds delays, and builds Referer chain.
+ *
+ * - Step 0: `sec-fetch-site: none` (typed URL / landing)
+ * - Step N: `same-origin` or `cross-site` (inferred from previous URL)
+ * - All steps: `sec-fetch-user: ?1`, `destination: document` (user-initiated navigation)
  *
  * @example
  * ```ts
  * const results = await navigateFlow(client, [
- *   { url: 'https://example.com' },              // Visit homepage
- *   { url: 'https://example.com/products' },      // Browse products
- *   { url: 'https://example.com/products/123' },  // View product detail
+ *   { url: 'https://example.com' },              // sec-fetch-site: none
+ *   { url: 'https://example.com/products' },      // sec-fetch-site: same-origin
+ *   { url: 'https://other.com/page' },            // sec-fetch-site: cross-site
  * ])
  * ```
  */
 export async function navigateFlow<T>(
   client: {
-    get: (url: string, config?: { sessionId?: string }) => Promise<T>
-    post: (url: string, data?: unknown, config?: { sessionId?: string }) => Promise<T>
+    get: (url: string, config?: { sessionId?: string, context?: IRequestContext }) => Promise<T>
+    post: (
+      url: string,
+      data?: unknown,
+      config?: { sessionId?: string, context?: IRequestContext }
+    ) => Promise<T>
   },
   steps: INavigationStep<T>[],
   sessionId?: string,
 ): Promise<T[]> {
   const results: T[] = []
+  let previousUrl: string | undefined
 
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i]!
@@ -196,7 +240,15 @@ export async function navigateFlow<T>(
       await randomDelay(delay.min, delay.max)
     }
 
-    const config = sessionId ? { sessionId } : undefined
+    // Auto-infer context from step position and URL relationship
+    const context: IRequestContext = step.context ?? {
+      isNavigation: true,
+      isUserInitiated: true,
+      targetSite: inferTargetSite(previousUrl, step.url),
+      destination: 'document',
+    }
+
+    const config = { sessionId, context }
 
     const response
       = step.method?.toUpperCase() === 'POST'
@@ -204,6 +256,7 @@ export async function navigateFlow<T>(
         : await client.get(step.url, config)
 
     results.push(response)
+    previousUrl = step.url
 
     if (step.onResponse) {
       step.onResponse(response)

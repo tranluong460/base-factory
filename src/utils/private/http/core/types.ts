@@ -106,6 +106,18 @@ export interface IHttpResponse<T = string> {
   duration: number
 }
 
+// ─── Timing ───────────────────────────────────────────────────
+
+/** Controls automatic human-like delays between requests per session. */
+export interface ITimingPolicy {
+  /** Enable automatic delays between requests (default: false) */
+  enabled: boolean
+  /** ms range for navigation requests (default: [2000, 8000]) */
+  navigationRange?: [number, number]
+  /** ms range for API/sub-resource requests (default: [200, 800]) */
+  apiRange?: [number, number]
+}
+
 // ─── Client ────────────────────────────────────────────────────
 
 export interface IHttpClientConfig {
@@ -121,6 +133,8 @@ export interface IHttpClientConfig {
   hooks?: IRequestHooks
   /** Challenge solver for Cloudflare JS challenges / Turnstile (e.g. CapSolver). No browser binary needed. */
   challengeSolver?: import('../challenge/types').IChallengeSolver
+  /** Auto human-like timing between requests. Disabled by default. */
+  timing?: ITimingPolicy
 }
 
 // ─── Hooks ─────────────────────────────────────────────────────

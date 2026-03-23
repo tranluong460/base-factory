@@ -18,6 +18,7 @@ import { NetworkError, TimeoutError } from './core/errors'
 import { formatProxyUrl } from './core/proxy'
 import { buildSecFetchHeaders } from './fingerprint/header-generator'
 import { SessionManager } from './session'
+import { randomDelay } from './utils/behavior'
 
 const DEFAULT_SESSION_ID = '__default__'
 const DEFAULT_TIMEOUT_MS = 30_000
@@ -32,6 +33,7 @@ export class HttpClient {
   private readonly sessionManager: SessionManager
   private readonly refererPolicy = new RefererPolicy()
   private readonly acceptChTracker = new AcceptChTracker()
+  private readonly lastRequestTime = new Map<string, number>()
   private initPromise: Promise<void> | null = null
 
   constructor(config: IHttpClientConfig = {}) {
@@ -99,6 +101,7 @@ export class HttpClient {
     await this.sessionManager.destroyAll()
     this.refererPolicy.clear()
     this.acceptChTracker.clear()
+    this.lastRequestTime.clear()
     this.initPromise = null
   }
 
@@ -142,6 +145,9 @@ export class HttpClient {
     }
 
     const fullUrl = this.config.baseURL ? `${this.config.baseURL}${url}` : url
+
+    // Auto timing: delay between requests to simulate real user
+    await this.applyTimingDelay(sessionId, config)
 
     const solver = this.config.challengeSolver
     const proxyUrl = this.config.proxy ? formatProxyUrl(this.config.proxy) : undefined
@@ -253,6 +259,29 @@ export class HttpClient {
       retryCount: response.retryCount,
       duration,
     }
+  }
+
+  private async applyTimingDelay(sessionId: string, config?: IRequestConfig): Promise<void> {
+    const timing = this.config.timing
+    if (!timing?.enabled) {
+      this.lastRequestTime.set(sessionId, Date.now())
+      return
+    }
+
+    const lastTime = this.lastRequestTime.get(sessionId)
+    if (lastTime) {
+      const isNavigation = config?.context?.isNavigation ?? true
+      const [min, max] = isNavigation
+        ? (timing.navigationRange ?? [2000, 8000])
+        : (timing.apiRange ?? [200, 800])
+
+      // Only delay if not enough time has passed naturally
+      const elapsed = Date.now() - lastTime
+      if (elapsed < min) {
+        await randomDelay(Math.max(0, min - elapsed), Math.max(1, max - elapsed))
+      }
+    }
+    this.lastRequestTime.set(sessionId, Date.now())
   }
 
   private async sendRequest(
