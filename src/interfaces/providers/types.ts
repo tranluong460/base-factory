@@ -8,9 +8,9 @@ export interface ProviderTypeMap {
 }
 
 export interface PayloadConfigMap {
-  [EnumLabsProvider.SCRIPTED]: { example: { example1: string, example2: number } }
-  [EnumLabsProvider.AUTOMATED]: { example: { example1: string, example2: number } }
-  [EnumLabsProvider.DIRECT_API]: { example: { example1: string, example2: number } }
+  [EnumLabsProvider.SCRIPTED]: { example: { example1: string; example2: number } }
+  [EnumLabsProvider.AUTOMATED]: { example: { example1: string; example2: number } }
+  [EnumLabsProvider.DIRECT_API]: { example: { example1: string; example2: number } }
 }
 
 export type IPayloadProvider<T extends EnumLabsProvider> = {

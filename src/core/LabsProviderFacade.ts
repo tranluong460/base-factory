@@ -5,7 +5,7 @@ import { LabsProviderRegistry } from './LabsProviderRegistry'
 
 export class LabsProviderFacade {
   static async getProvider<T extends EnumLabsProvider>(
-    payload: IPayloadProvider<T>,
+    payload: IPayloadProvider<T>
   ): Promise<ProviderTypeMap[T]> {
     await LabsPluginLoader.loadPlugin(payload.type)
     return LabsProviderRegistry.getFactory(payload.type).create(payload) as ProviderTypeMap[T]

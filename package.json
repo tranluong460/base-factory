@@ -74,9 +74,7 @@
     "clean": "rm -rf dist node_modules/.vite",
     "nuke": "rm -rf node_modules dist && yarn install"
   },
-  "dependencies": {
-    "tlsclientwrapper": "^4.2.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@antfu/eslint-config": "^2.9.0",
     "@commitlint/cli": "^20.4.4",
