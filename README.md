@@ -10,15 +10,14 @@
 - **Provider pattern** -- register, resolve, and run providers through `LabsProviderFacade`
 - **Three built-in providers** -- Automated, Scripted, and Direct API
 - **Dual output** -- ESM and CJS builds via Vite lib mode
-- **HTTP utilities** -- Axios-based client with HTTP/HTTPS/SOCKS proxy support
 - **i18n ready** -- English, Vietnamese, and Korean locale bundles included
 
 ## Prerequisites
 
-| Tool    | Version  |
-| ------- | -------- |
-| Node.js | >= 20    |
-| Yarn    | 1.22.22  |
+| Tool    | Version |
+| ------- | ------- |
+| Node.js | >= 20   |
+| Yarn    | 1.22.22 |
 
 ## Getting Started
 
@@ -89,22 +88,22 @@ src/
 
 ## Scripts
 
-| Script          | Description                             |
-| --------------- | --------------------------------------- |
-| `dev`           | Start Vite dev server                   |
-| `build`         | Type-check then build with Vite         |
-| `typecheck`     | Run `tsc --noEmit`                      |
-| `lint`          | Lint and auto-fix with ESLint           |
-| `lint:check`    | Lint without fixing                     |
-| `format`        | Format source files with Prettier       |
-| `format:check`  | Check formatting without writing        |
-| `flint`         | Run format then lint in sequence        |
-| `test`          | Run Vitest (single run)                 |
-| `test:watch`    | Run Vitest in watch mode                |
-| `test:coverage` | Run tests with V8 coverage              |
-| `test:ui`       | Open Vitest UI                          |
-| `release`       | Test, build, then release via changelogen |
-| `clean`         | Remove `dist/` and Vite cache           |
+| Script          | Description                                   |
+| --------------- | --------------------------------------------- |
+| `dev`           | Start Vite dev server                         |
+| `build`         | Type-check then build with Vite               |
+| `typecheck`     | Run `tsc --noEmit`                            |
+| `lint`          | Lint and auto-fix with ESLint                 |
+| `lint:check`    | Lint without fixing                           |
+| `format`        | Format source files with Prettier             |
+| `format:check`  | Check formatting without writing              |
+| `flint`         | Run format then lint in sequence              |
+| `test`          | Run Vitest (single run)                       |
+| `test:watch`    | Run Vitest in watch mode                      |
+| `test:coverage` | Run tests with V8 coverage                    |
+| `test:ui`       | Open Vitest UI                                |
+| `release`       | Test, build, then release via changelogen     |
+| `clean`         | Remove `dist/` and Vite cache                 |
 | `nuke`          | Remove `node_modules/` and `dist/`, reinstall |
 
 ## Testing
