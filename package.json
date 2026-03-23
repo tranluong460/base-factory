@@ -72,7 +72,8 @@
     "prepare": "husky",
     "submodule": "git submodule update --remote --merge",
     "clean": "rm -rf dist node_modules/.vite",
-    "nuke": "rm -rf node_modules dist && yarn install"
+    "nuke": "rm -rf node_modules dist && yarn install",
+    "deploy": "node scripts/deploy.js"
   },
   "dependencies": {},
   "devDependencies": {
