@@ -1,3 +1,2 @@
-export { generateHeaders, generateFromPreset } from './header-generator'
-export { getPreset, getChromePatch, getGreaseBrand } from './presets'
-export { createStealthAgent } from './tls-config'
+export { buildSecFetchHeaders } from './header-generator'
+export { generateProfile, generateRandomProfile } from './profile-manager'

@@ -1,100 +1,224 @@
-import type { FingerprintPreset, PresetData } from '../types'
+import type { ClientProfile } from 'tlsclientwrapper'
+import type { FingerprintPreset, IBrandEntry, ITlsProfileConfig } from '../core/types'
 
-/** Browser version ranges (2024-2026) */
-const VERSIONS = {
-  chrome: { min: 130, max: 145 },
-  firefox: { min: 130, max: 147 },
-  safari: { min: 18, max: 26 },
-  edge: { min: 130, max: 144 },
-} as const
+// ─── Template Placeholders ─────────────────────────────────────
+// Used in uaTemplate strings, replaced at profile generation time via .replaceAll()
+export const TPL_VERSION = '{{VERSION}}'
+export const TPL_MAJOR = '{{MAJOR}}'
+export const TPL_IOS_VERSION = '{{IOS_VERSION}}'
 
-/** Chrome patch versions by major version */
-const CHROME_PATCHES: Record<number, string[]> = {
-  130: ['130.0.6723.58', '130.0.6723.92', '130.0.6723.102'],
-  131: ['131.0.6778.69', '131.0.6778.85', '131.0.6778.108'],
-  132: ['132.0.6834.57', '132.0.6834.83', '132.0.6834.110'],
-  133: ['133.0.6917.71', '133.0.6917.86', '133.0.6917.98'],
-  134: ['134.0.6998.44', '134.0.6998.62', '134.0.6998.89'],
-  135: ['135.0.7049.52', '135.0.7049.84', '135.0.7049.96'],
-  136: ['136.0.7103.59', '136.0.7103.92', '136.0.7103.113'],
-  137: ['137.0.7151.68', '137.0.7151.90', '137.0.7151.104'],
-  138: ['138.0.7204.62', '138.0.7204.85', '138.0.7204.99'],
-  139: ['139.0.7258.64', '139.0.7258.88', '139.0.7258.102'],
-  140: ['140.0.7312.58', '140.0.7312.79', '140.0.7312.95'],
-  141: ['141.0.7366.67', '141.0.7366.88', '141.0.7366.105'],
-  142: ['142.0.7420.61', '142.0.7420.82', '142.0.7420.98'],
-  143: ['143.0.7474.66', '143.0.7474.85', '143.0.7474.101'],
-  144: ['144.0.7559.66', '144.0.7559.98', '144.0.7559.110'],
-  145: ['145.0.7612.62', '145.0.7612.84', '145.0.7612.99'],
+// ─── Chromium GREASE Brand Algorithm ───────────────────────────
+// Source: chromium/components/embedder_support/user_agent_utils.cc
+
+const GREASE_CHARS = [' ', '(', ':', '-', '.', '/', ')', ';', '=', '?', '_'] as const
+const GREASE_VERSIONS = ['8', '99', '24'] as const
+const BRAND_PERMUTATIONS = [
+  [0, 1, 2],
+  [0, 2, 1],
+  [1, 0, 2],
+  [1, 2, 0],
+  [2, 0, 1],
+  [2, 1, 0],
+] as const
+
+/**
+ * Generate GREASE brand entries matching exact Chromium algorithm.
+ * Each Chrome version produces a unique GREASE brand string, version, and ordering.
+ */
+export function generateChromeGreaseBrands(
+  majorVersion: number,
+  browserBrand: string,
+): IBrandEntry[] {
+  const greaseChar1 = GREASE_CHARS[majorVersion % 11]!
+  const greaseChar2 = GREASE_CHARS[(majorVersion + 1) % 11]!
+  const greaseBrand = `Not${greaseChar1}A${greaseChar2}Brand`
+  const greaseVersion = GREASE_VERSIONS[majorVersion % 3]!
+
+  const original: IBrandEntry[] = [
+    { brand: greaseBrand, version: greaseVersion },
+    { brand: 'Chromium', version: String(majorVersion) },
+    { brand: browserBrand, version: String(majorVersion) },
+  ]
+
+  // Permute brand order based on version
+  const order = BRAND_PERMUTATIONS[majorVersion % 6]!
+  const shuffled: IBrandEntry[] = Array.from({ length: 3 }) as IBrandEntry[]
+  for (let i = 0; i < 3; i++) {
+    shuffled[order[i]!] = original[i]!
+  }
+
+  return shuffled
 }
 
-/** GREASE brand by Chrome version */
-const GREASE_BRANDS: Record<number, string> = {
-  130: '"Not/A)Brand"',
-  131: '"Not)A;Brand"',
-  132: '"Not_A Brand"',
-  133: '"Not:A-Brand"',
-  134: '"Not/A)Brand"',
-  135: '"Not)A;Brand"',
-  136: '"Not_A Brand"',
-  137: '"Not:A-Brand"',
-  138: '"Not/A)Brand"',
-  139: '"Not)A;Brand"',
-  140: '"Not_A Brand"',
-  141: '"Not:A-Brand"',
-  142: '"Not/A)Brand"',
-  143: '"Not)A;Brand"',
-  144: '"Not(A:Brand"',
-  145: '"Not:A-Brand"',
-}
+// ─── Preset Map ────────────────────────────────────────────────
 
-/** All presets */
-const PRESETS: Record<FingerprintPreset, PresetData> = {
-  // Desktop
-  CHROME_WINDOWS: { browser: 'chrome', version: VERSIONS.chrome, os: 'windows', device: 'desktop' },
-  CHROME_MACOS: { browser: 'chrome', version: VERSIONS.chrome, os: 'macos', device: 'desktop' },
-  CHROME_LINUX: { browser: 'chrome', version: VERSIONS.chrome, os: 'linux', device: 'desktop' },
+/**
+ * Maps FingerprintPreset → TLS profile config with browser-specific metadata.
+ * Brands are now generated dynamically via generateChromeGreaseBrands() —
+ * the `brands` field is kept empty and populated at profile generation time.
+ */
+export const PRESET_MAP: Record<FingerprintPreset, ITlsProfileConfig> = {
+  CHROME_WINDOWS: {
+    identifiers: ['chrome_131', 'chrome_133', 'chrome_144', 'chrome_146'] as ClientProfile[],
+    os: 'Windows NT 10.0; Win64; x64',
+    platform: 'Win32',
+    platformVersion: '15.0.0',
+    secChUaPlatform: '"Windows"',
+    mobile: false,
+    uaTemplate:
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{{VERSION}}.0.0.0 Safari/537.36',
+    brands: [], // Dynamic — generated per version
+  },
+
+  CHROME_MACOS: {
+    identifiers: ['chrome_131', 'chrome_133', 'chrome_144', 'chrome_146'] as ClientProfile[],
+    os: 'Macintosh; Intel Mac OS X 10_15_7',
+    platform: 'macOS',
+    platformVersion: '14.7.1',
+    secChUaPlatform: '"macOS"',
+    mobile: false,
+    uaTemplate:
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{{VERSION}}.0.0.0 Safari/537.36',
+    brands: [],
+  },
+
+  CHROME_LINUX: {
+    identifiers: ['chrome_131', 'chrome_133', 'chrome_144', 'chrome_146'] as ClientProfile[],
+    os: 'X11; Linux x86_64',
+    platform: 'Linux',
+    platformVersion: '6.5.0',
+    secChUaPlatform: '"Linux"',
+    mobile: false,
+    uaTemplate:
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{{VERSION}}.0.0.0 Safari/537.36',
+    brands: [],
+  },
+
   FIREFOX_WINDOWS: {
-    browser: 'firefox',
-    version: VERSIONS.firefox,
-    os: 'windows',
-    device: 'desktop',
+    identifiers: ['firefox_133', 'firefox_135', 'firefox_147'] as ClientProfile[],
+    os: 'Windows NT 10.0; Win64; x64',
+    platform: 'Win32',
+    platformVersion: '10.0',
+    secChUaPlatform: '"Windows"',
+    mobile: false,
+    uaTemplate:
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:{{VERSION}}.0) Gecko/20100101 Firefox/{{VERSION}}.0',
+    brands: [],
   },
-  FIREFOX_MACOS: { browser: 'firefox', version: VERSIONS.firefox, os: 'macos', device: 'desktop' },
-  FIREFOX_LINUX: { browser: 'firefox', version: VERSIONS.firefox, os: 'linux', device: 'desktop' },
-  SAFARI_MACOS: { browser: 'safari', version: VERSIONS.safari, os: 'macos', device: 'desktop' },
-  EDGE_WINDOWS: { browser: 'edge', version: VERSIONS.edge, os: 'windows', device: 'desktop' },
-  // Mobile
-  CHROME_ANDROID: { browser: 'chrome', version: VERSIONS.chrome, os: 'android', device: 'mobile' },
-  CHROME_IOS: { browser: 'chrome', version: VERSIONS.chrome, os: 'ios', device: 'mobile' },
-  FIREFOX_ANDROID: {
-    browser: 'firefox',
-    version: VERSIONS.firefox,
-    os: 'android',
-    device: 'mobile',
+
+  FIREFOX_MACOS: {
+    identifiers: ['firefox_133', 'firefox_135', 'firefox_147'] as ClientProfile[],
+    os: 'Macintosh; Intel Mac OS X 10.15',
+    platform: 'MacIntel',
+    platformVersion: '10.15',
+    secChUaPlatform: '"macOS"',
+    mobile: false,
+    uaTemplate:
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:{{VERSION}}.0) Gecko/20100101 Firefox/{{VERSION}}.0',
+    brands: [],
   },
-  SAFARI_IOS: { browser: 'safari', version: VERSIONS.safari, os: 'ios', device: 'mobile' },
+
+  FIREFOX_LINUX: {
+    identifiers: ['firefox_133', 'firefox_135', 'firefox_147'] as ClientProfile[],
+    os: 'X11; Linux x86_64',
+    platform: 'Linux x86_64',
+    platformVersion: '6.5.0',
+    secChUaPlatform: '"Linux"',
+    mobile: false,
+    uaTemplate:
+      'Mozilla/5.0 (X11; Linux x86_64; rv:{{VERSION}}.0) Gecko/20100101 Firefox/{{VERSION}}.0',
+    brands: [],
+  },
+
+  SAFARI_MACOS: {
+    identifiers: ['safari_15_6_1', 'safari_16_0'] as ClientProfile[],
+    os: 'Macintosh; Intel Mac OS X 10_15_7',
+    platform: 'MacIntel',
+    platformVersion: '10_15_7',
+    secChUaPlatform: '"macOS"',
+    mobile: false,
+    uaTemplate:
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/{{VERSION}} Safari/605.1.15',
+    brands: [],
+  },
+
+  SAFARI_IOS: {
+    identifiers: [
+      'safari_ios_17_0',
+      'safari_ios_18_0',
+      'safari_ios_18_5',
+      'safari_ios_26_0',
+    ] as ClientProfile[],
+    os: 'iPhone; CPU iPhone OS {{IOS_VERSION}} like Mac OS X',
+    platform: 'iPhone',
+    platformVersion: '{{IOS_VERSION}}',
+    secChUaPlatform: '"iOS"',
+    mobile: true,
+    uaTemplate:
+      'Mozilla/5.0 (iPhone; CPU iPhone OS {{IOS_VERSION}} like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/{{VERSION}} Mobile/15E148 Safari/604.1',
+    brands: [],
+  },
+
+  EDGE_WINDOWS: {
+    identifiers: ['chrome_144', 'chrome_146'] as ClientProfile[],
+    os: 'Windows NT 10.0; Win64; x64',
+    platform: 'Win32',
+    platformVersion: '15.0.0',
+    secChUaPlatform: '"Windows"',
+    mobile: false,
+    uaTemplate:
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{{VERSION}}.0.0.0 Safari/537.36 Edg/{{VERSION}}.0.0.0',
+    brands: [], // Dynamic — uses 'Microsoft Edge' brand
+  },
+
+  CHROME_ANDROID: {
+    identifiers: ['chrome_131', 'chrome_133', 'chrome_144', 'chrome_146'] as ClientProfile[],
+    os: 'Linux; Android 14; Pixel 8',
+    platform: 'Linux armv8l',
+    platformVersion: '14.0.0',
+    secChUaPlatform: '"Android"',
+    mobile: true,
+    uaTemplate:
+      'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{{VERSION}}.0.0.0 Mobile Safari/537.36',
+    brands: [],
+  },
 }
 
-/** Get preset data */
-export function getPreset(name: FingerprintPreset): PresetData {
-  return PRESETS[name]
+// ─── Version Helpers ───────────────────────────────────────────
+
+/** Extract major version number from a tls-client identifier (e.g. 'chrome_146' → 146) */
+export function extractMajorVersion(identifier: ClientProfile): number {
+  const match = /(\d+)/.exec(identifier)
+  return match ? Number(match[1]) : 100
 }
 
-/** Get Chrome patch version */
-export function getChromePatch(majorVersion: number, seed?: string): string | undefined {
-  const patches = CHROME_PATCHES[majorVersion]
-  if (!patches?.length) {
-    return `${majorVersion}.0.0.0`
+const SAFARI_IOS_VERSION_MAP: Record<string, string> = {
+  safari_ios_15_5: '15_5',
+  safari_ios_15_6: '15_6',
+  safari_ios_16_0: '16_0',
+  safari_ios_17_0: '17_0',
+  safari_ios_18_0: '18_0',
+  safari_ios_18_5: '18_5',
+  safari_ios_26_0: '26_0',
+}
+
+export function getIOSVersion(identifier: ClientProfile): string {
+  return SAFARI_IOS_VERSION_MAP[identifier] ?? '18_0'
+}
+
+const SAFARI_MACOS_VERSION_MAP: Record<string, string> = {
+  safari_15_6_1: '15.6.1',
+  safari_16_0: '16.0',
+}
+
+export function getSafariVersion(identifier: ClientProfile): string {
+  return SAFARI_MACOS_VERSION_MAP[identifier] ?? '16.0'
+}
+
+/** Get the browser brand name for a preset (used in GREASE brand generation) */
+export function getBrowserBrand(preset: FingerprintPreset): string {
+  if (preset === 'EDGE_WINDOWS') {
+    return 'Microsoft Edge'
   }
-  if (seed) {
-    const hash = [...seed].reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0)
-    return patches[Math.abs(hash) % patches.length]
-  }
-  return patches[Math.floor(Math.random() * patches.length)]
-}
-
-/** Get GREASE brand for version */
-export function getGreaseBrand(version: number): string {
-  return GREASE_BRANDS[version] || '"Not_A Brand"'
+  return 'Google Chrome'
 }

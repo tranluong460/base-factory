@@ -1,285 +1,241 @@
-import { createHash } from 'node:crypto'
 import type {
-  BrowserHeaders,
-  BrowserName,
-  FingerprintConfig,
   FingerprintPreset,
-  OperatingSystem,
-} from '../types'
-import { getChromePatch, getGreaseBrand, getPreset } from './presets'
+  IBrandEntry,
+  IRequestContext,
+  ITlsProfileConfig,
+} from '../core/types'
+import { generateChromeGreaseBrands, getBrowserBrand } from './presets'
 
-// ==================== Random Utilities ====================
-
-interface Random {
-  int: (min: number, max: number) => number
-  item: <T>(arr: readonly T[]) => T | undefined
+interface IHeaderGeneratorInput {
+  preset: FingerprintPreset
+  majorVersion: number
+  userAgent: string
+  config: ITlsProfileConfig
+  locales?: string[]
+  rng?: () => number
 }
 
-function createRandom(seed?: string): Random {
-  if (!seed) {
-    return {
-      int: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
-      item: (arr) => arr[Math.floor(Math.random() * arr.length)],
-    }
-  }
-  const hash = createHash('sha256').update(seed).digest('hex')
-  let idx = 0
-  const next = () => {
-    const val = Number.parseInt(hash.slice(idx * 8, (idx + 1) * 8), 16) / 0xFFFFFFFF
-    idx = (idx + 1) % 8
-    return val
-  }
-  return {
-    int: (min, max) => Math.floor(next() * (max - min + 1)) + min,
-    item: (arr) => arr[Math.floor(next() * arr.length)],
-  }
+interface IHeaderGeneratorOutput {
+  headers: Record<string, string>
+  headerOrder: string[]
 }
 
-// ==================== User-Agent Builders ====================
-
-const UA = {
-  chrome: (v: number, os: OperatingSystem) => {
-    const ver = `${v}.0.0.0`
-    const base: Record<OperatingSystem, string> = {
-      windows: `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${ver} Safari/537.36`,
-      macos: `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${ver} Safari/537.36`,
-      linux: `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${ver} Safari/537.36`,
-      android: `Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${ver} Mobile Safari/537.36`,
-      ios: `Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/${ver} Mobile/15E148 Safari/604.1`,
-    }
-    return base[os]
-  },
-  edge: (v: number) =>
-    `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${v}.0.0.0 Safari/537.36 Edg/${v}.0.0.0`,
-  firefox: (v: number, os: OperatingSystem) => {
-    const base: Record<OperatingSystem, string> = {
-      windows: `Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:${v}.0) Gecko/20100101 Firefox/${v}.0`,
-      macos: `Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:${v}.0) Gecko/20100101 Firefox/${v}.0`,
-      linux: `Mozilla/5.0 (X11; Linux x86_64; rv:${v}.0) Gecko/20100101 Firefox/${v}.0`,
-      android: `Mozilla/5.0 (Android 14; Mobile; rv:${v}.0) Gecko/${v}.0 Firefox/${v}.0`,
-      ios: `Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/${v}.0 Mobile/15E148 Safari/605.1.15`,
-    }
-    return base[os]
-  },
-  safari: (v: number, os: OperatingSystem) => {
-    if (os === 'ios') {
-      return `Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${v}.0 Mobile/15E148 Safari/604.1`
-    }
-    return `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${v}.0 Safari/605.1.15`
-  },
+function isChromeBased(preset: FingerprintPreset): boolean {
+  return preset.startsWith('CHROME_') || preset === 'EDGE_WINDOWS'
 }
 
-function buildUserAgent(browser: BrowserName, version: number, os: OperatingSystem): string {
-  switch (browser) {
-    case 'chrome':
-      return UA.chrome(version, os)
-    case 'edge':
-      return UA.edge(version)
-    case 'firefox':
-      return UA.firefox(version, os)
-    case 'safari':
-      return UA.safari(version, os)
+function isFirefox(preset: FingerprintPreset): boolean {
+  return preset.startsWith('FIREFOX_')
+}
+
+function isSafari(preset: FingerprintPreset): boolean {
+  return preset.startsWith('SAFARI_')
+}
+
+function buildSecChUa(brands: IBrandEntry[]): string {
+  if (brands.length === 0) {
+    return ''
   }
-}
-
-// ==================== Header Builders ====================
-
-const PLATFORM: Record<OperatingSystem, string> = {
-  windows: '"Windows"',
-  macos: '"macOS"',
-  linux: '"Linux"',
-  android: '"Android"',
-  ios: '"iOS"',
+  return brands.map((b) => `"${b.brand}";v="${b.version}"`).join(', ')
 }
 
 function buildAcceptLanguage(locales?: string[]): string {
-  if (!locales?.length) {
-    return 'en-US,en;q=0.9'
-  }
-  return locales.map((l, i) => (i === 0 ? l : `${l};q=${(1 - i * 0.1).toFixed(1)}`)).join(',')
+  const langs = locales ?? ['en-US', 'en']
+  return langs
+    .map((lang, i) => {
+      if (i === 0) {
+        return lang
+      }
+      const quality = Math.max(0.1, 1 - i * 0.1)
+      return `${lang};q=${quality.toFixed(1)}`
+    })
+    .join(',')
 }
 
-// ==================== Header Ordering ====================
-
 /**
- * Chrome header order (based on real Chrome traffic analysis)
- * Order matters for fingerprinting detection
+ * Build sec-fetch-* headers based on request context.
+ * Real browsers vary these values per request type.
  */
-const CHROME_HEADER_ORDER = [
-  'host',
-  'connection',
-  'sec-ch-ua',
-  'sec-ch-ua-mobile',
-  'sec-ch-ua-platform',
-  'upgrade-insecure-requests',
-  'user-agent',
-  'accept',
-  'sec-fetch-site',
-  'sec-fetch-mode',
-  'sec-fetch-user',
-  'sec-fetch-dest',
-  'accept-encoding',
-  'accept-language',
-  'priority',
-] as const
-
-/**
- * Firefox header order
- */
-const FIREFOX_HEADER_ORDER = [
-  'host',
-  'user-agent',
-  'accept',
-  'accept-language',
-  'accept-encoding',
-  'dnt',
-  'connection',
-  'upgrade-insecure-requests',
-  'sec-fetch-dest',
-  'sec-fetch-mode',
-  'sec-fetch-site',
-  'sec-fetch-user',
-  'priority',
-] as const
-
-/**
- * Safari header order
- */
-const SAFARI_HEADER_ORDER = [
-  'host',
-  'accept',
-  'accept-language',
-  'accept-encoding',
-  'connection',
-  'user-agent',
-] as const
-
-/**
- * Order headers according to browser-specific order
- */
-function orderHeaders(
-  headers: Record<string, string | undefined>,
-  order: readonly string[],
-): BrowserHeaders {
-  const result: Record<string, string> = {}
-
-  // Add headers in specified order
-  for (const key of order) {
-    if (headers[key] !== undefined) {
-      result[key] = headers[key]
-    }
+export function buildSecFetchHeaders(context?: IRequestContext): Record<string, string> {
+  const ctx = context ?? {
+    isNavigation: true,
+    isUserInitiated: true,
+    targetSite: 'none',
+    destination: 'document',
   }
 
-  // Add remaining headers not in order list
-  for (const [key, value] of Object.entries(headers)) {
-    if (value !== undefined && !(key in result)) {
-      result[key] = value
-    }
+  const headers: Record<string, string> = {
+    'sec-fetch-site': ctx.targetSite,
+    'sec-fetch-mode': ctx.isNavigation ? 'navigate' : 'cors',
+    'sec-fetch-dest': ctx.destination,
   }
 
-  return result as BrowserHeaders
+  // sec-fetch-user is ONLY set on user-initiated navigations
+  if (ctx.isNavigation && ctx.isUserInitiated) {
+    headers['sec-fetch-user'] = '?1'
+  }
+
+  // Dynamic priority per resource type (RFC 9218)
+  const priorityMap: Record<string, string> = {
+    document: 'u=0, i',
+    style: 'u=0',
+    script: 'u=1',
+    font: 'u=0',
+    image: 'u=4, i',
+    empty: 'u=1', // XHR/fetch
+    iframe: 'u=4, i',
+  }
+  const priority = priorityMap[ctx.destination]
+  if (priority) {
+    headers.priority = priority
+  }
+
+  return headers
 }
 
-// ==================== Main Generator ====================
-
 /**
- * Generate browser headers from preset
+ * Generate browser-realistic headers with correct ordering per browser type.
+ * Chrome uses dynamic GREASE brands from Chromium's algorithm.
+ * Firefox skips Client Hints. Safari 16.4+ sends sec-fetch but not sec-fetch-user.
  */
-export function generateHeaders(config: FingerprintConfig): BrowserHeaders {
-  const { preset = 'CHROME_WINDOWS', seed, locales } = config
-  const data = getPreset(preset)
-  const random = createRandom(seed)
-  const version = random.int(data.version.min, data.version.max)
-  const { browser, os, device } = data
+export function generateBrowserHeaders(input: IHeaderGeneratorInput): IHeaderGeneratorOutput {
+  const { preset, majorVersion, userAgent, config, locales, rng } = input
+  const headers: Record<string, string> = {}
 
-  const headers: Record<string, string | undefined> = {}
+  if (isChromeBased(preset)) {
+    return buildChromeHeaders(headers, preset, majorVersion, userAgent, config, locales)
+  }
 
-  // Common headers
-  headers['user-agent'] = buildUserAgent(browser, version, os)
-  headers['accept-language'] = buildAcceptLanguage(locales)
-  headers.connection = 'keep-alive'
+  if (isFirefox(preset)) {
+    return buildFirefoxHeaders(headers, userAgent, locales, rng)
+  }
+
+  if (isSafari(preset)) {
+    return buildSafariHeaders(headers, preset, majorVersion, userAgent, locales)
+  }
+
+  return buildSafariHeaders(headers, preset, majorVersion, userAgent, locales)
+}
+
+function buildChromeHeaders(
+  headers: Record<string, string>,
+  preset: FingerprintPreset,
+  majorVersion: number,
+  userAgent: string,
+  config: ITlsProfileConfig,
+  locales?: string[],
+): IHeaderGeneratorOutput {
+  // Dynamic GREASE brands from real Chromium algorithm
+  const browserBrand = getBrowserBrand(preset)
+  const brands = generateChromeGreaseBrands(majorVersion, browserBrand)
+  const secChUa = buildSecChUa(brands)
+
+  headers['sec-ch-ua'] = secChUa
+  headers['sec-ch-ua-mobile'] = config.mobile ? '?1' : '?0'
+  headers['sec-ch-ua-platform'] = config.secChUaPlatform
   headers['upgrade-insecure-requests'] = '1'
-
-  // Browser-specific headers
-  if (browser === 'chrome' || browser === 'edge') {
-    const brand = getGreaseBrand(version)
-    const browserName = browser === 'chrome' ? 'Google Chrome' : 'Microsoft Edge'
-    const patch = getChromePatch(version, seed)
-
-    // Low entropy hints (sent by default)
-    headers['sec-ch-ua']
-      = `${brand};v="8", "Chromium";v="${version}", "${browserName}";v="${version}"`
-    headers['sec-ch-ua-mobile'] = device === 'mobile' ? '?1' : '?0'
-    headers['sec-ch-ua-platform'] = PLATFORM[os]
-
-    // Accept header for Chrome
-    headers.accept
-      = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
-
-    // Accept-Encoding with zstd support (Chrome 123+)
-    headers['accept-encoding'] = 'gzip, deflate, br, zstd'
-
-    // Sec-Fetch headers
-    headers['sec-fetch-dest'] = 'document'
-    headers['sec-fetch-mode'] = 'navigate'
-    headers['sec-fetch-site'] = 'none'
-    headers['sec-fetch-user'] = '?1'
-
-    // Priority header (Chrome 124+)
-    // u=0: highest urgency (document), u=1: high (CSS), u=2: normal (scripts)
-    // i: incremental
-    headers.priority = 'u=0, i'
-
-    // High entropy hint - only include if needed (sec-ch-ua-full-version-list)
-    // Note: This is only sent when server requests via Accept-CH header
-    // We include it for completeness, but real Chrome only sends on 2nd request
-    headers['sec-ch-ua-full-version-list']
-      = `${brand};v="8.0.0.0", "Chromium";v="${patch}", "${browserName}";v="${patch}"`
-
-    return orderHeaders(headers, CHROME_HEADER_ORDER)
-  }
-
-  if (browser === 'firefox') {
-    headers.accept
-      = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8'
-    headers['accept-encoding'] = 'gzip, deflate, br, zstd'
-    headers.dnt = '1'
-
-    // Firefox sec-fetch headers
-    headers['sec-fetch-dest'] = 'document'
-    headers['sec-fetch-mode'] = 'navigate'
-    headers['sec-fetch-site'] = 'none'
-    headers['sec-fetch-user'] = '?1'
-
-    // Firefox priority header
-    headers.priority = 'u=0, i'
-
-    return orderHeaders(headers, FIREFOX_HEADER_ORDER)
-  }
-
-  if (browser === 'safari') {
-    headers.accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-    headers['accept-encoding'] = 'gzip, deflate, br'
-    // Safari doesn't send sec-fetch or priority headers by default
-
-    return orderHeaders(headers, SAFARI_HEADER_ORDER)
-  }
-
-  // Fallback
+  headers['user-agent'] = userAgent
   headers.accept
-    = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8'
+    = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
+  // Base sec-fetch-* defaults (sec-fetch-user applied dynamically per-request via buildSecFetchHeaders)
+  headers['sec-fetch-site'] = 'none'
+  headers['sec-fetch-mode'] = 'navigate'
+  headers['sec-fetch-dest'] = 'document'
+  headers['accept-encoding'] = 'gzip, deflate, br, zstd'
+  headers['accept-language'] = buildAcceptLanguage(locales)
+
+  if (majorVersion >= 124) {
+    headers.priority = 'u=0, i'
+  }
+
+  const headerOrder = [
+    'sec-ch-ua',
+    'sec-ch-ua-mobile',
+    'sec-ch-ua-platform',
+    'upgrade-insecure-requests',
+    'user-agent',
+    'accept',
+    'sec-fetch-site',
+    'sec-fetch-mode',
+    'sec-fetch-user',
+    'sec-fetch-dest',
+    'accept-encoding',
+    'accept-language',
+    ...(majorVersion >= 124 ? ['priority'] : []),
+  ]
+
+  return { headers, headerOrder }
+}
+
+function buildFirefoxHeaders(
+  headers: Record<string, string>,
+  userAgent: string,
+  locales?: string[],
+  rng?: () => number,
+): IHeaderGeneratorOutput {
+  headers['user-agent'] = userAgent
+  headers.accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+  headers['accept-language'] = buildAcceptLanguage(locales)
+  headers['accept-encoding'] = 'gzip, deflate, br, zstd'
+  headers['upgrade-insecure-requests'] = '1'
+  headers['sec-fetch-dest'] = 'document'
+  headers['sec-fetch-mode'] = 'navigate'
+  headers['sec-fetch-site'] = 'none'
+  // sec-fetch-user applied dynamically per-request via buildSecFetchHeaders
+  // Only ~8% of real Firefox users enable DNT
+  const dntChance = rng ? rng() : Math.random()
+  if (dntChance < 0.08) {
+    headers.dnt = '1'
+  }
+  headers.te = 'trailers'
+
+  const headerOrder = [
+    'user-agent',
+    'accept',
+    'accept-language',
+    'accept-encoding',
+    'upgrade-insecure-requests',
+    'sec-fetch-dest',
+    'sec-fetch-mode',
+    'sec-fetch-site',
+    'sec-fetch-user',
+    ...(headers.dnt ? ['dnt'] : []),
+    'te',
+  ]
+
+  return { headers, headerOrder }
+}
+
+function buildSafariHeaders(
+  headers: Record<string, string>,
+  preset: FingerprintPreset,
+  majorVersion: number,
+  userAgent: string,
+  locales?: string[],
+): IHeaderGeneratorOutput {
+  headers['user-agent'] = userAgent
+  headers.accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+  headers['accept-language'] = buildAcceptLanguage(locales)
   headers['accept-encoding'] = 'gzip, deflate, br'
 
-  return headers as BrowserHeaders
-}
+  // Safari 16.4+ sends sec-fetch-site/mode/dest but NEVER sec-fetch-user
+  const safariSendsSecFetch
+    = (preset === 'SAFARI_MACOS' && majorVersion >= 16)
+      || (preset === 'SAFARI_IOS' && majorVersion >= 17)
 
-/**
- * Shorthand to generate from preset name
- */
-export function generateFromPreset(
-  preset: FingerprintPreset,
-  seed?: string,
-  locales?: string[],
-): BrowserHeaders {
-  return generateHeaders({ preset, seed, locales })
+  if (safariSendsSecFetch) {
+    headers['sec-fetch-site'] = 'none'
+    headers['sec-fetch-mode'] = 'navigate'
+    headers['sec-fetch-dest'] = 'document'
+  }
+
+  const headerOrder = [
+    'user-agent',
+    'accept',
+    'accept-language',
+    'accept-encoding',
+    ...(safariSendsSecFetch ? ['sec-fetch-site', 'sec-fetch-mode', 'sec-fetch-dest'] : []),
+  ]
+
+  return { headers, headerOrder }
 }

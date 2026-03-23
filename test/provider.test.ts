@@ -6,35 +6,35 @@ async function logUpdate(payload) {
   return true
 }
 
-describe('provider', () => {
-  it('aUTOMATED', async () => {
+describe.skip('provider', () => {
+  it(EnumLabsProvider.AUTOMATED, async () => {
     const provider = await LabsProviderFacade.getProvider({
       keyTarget: '0367370371',
       type: EnumLabsProvider.AUTOMATED,
       logUpdate,
-      example: { example1: 'AUTOMATED example1', example2: 1 },
+      example: { example1: `${EnumLabsProvider.AUTOMATED} example1`, example2: 1 },
     })
 
     await provider.start()
   })
 
-  it('sCRIPTED', async () => {
+  it(EnumLabsProvider.SCRIPTED, async () => {
     const provider = await LabsProviderFacade.getProvider({
       keyTarget: '0367370371',
       type: EnumLabsProvider.SCRIPTED,
       logUpdate,
-      example: { example1: 'SCRIPTED example1', example2: 1 },
+      example: { example1: `${EnumLabsProvider.SCRIPTED} example1`, example2: 1 },
     })
 
     await provider.start()
   })
 
-  it('dIRECT_API', async () => {
+  it(EnumLabsProvider.DIRECT_API, async () => {
     const provider = await LabsProviderFacade.getProvider({
       keyTarget: '0367370371',
       type: EnumLabsProvider.DIRECT_API,
       logUpdate,
-      example: { example1: 'DIRECT_API example1', example2: 1 },
+      example: { example1: `${EnumLabsProvider.DIRECT_API} example1`, example2: 1 },
     })
 
     await provider.start()

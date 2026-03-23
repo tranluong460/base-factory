@@ -1,271 +1,340 @@
-import { BaseClass } from '@vitechgroup/mkt-elec-core'
-import type { AxiosInstance, AxiosRequestConfig } from 'axios'
-import axios from 'axios'
-import { createStealthAgent, generateHeaders } from './fingerprint'
-import { setupInterceptors } from './interceptors'
-import { createProxyAgents } from './proxy'
+import type { SessionClient, TlsClientResponse } from 'tlsclientwrapper'
 import type {
-  BrowserHeaders,
-  FingerprintConfig,
-  HttpClientConfig,
-  ProgressCallbacks,
-  ProgressEvent,
-  ProxyConfig,
-  ResolvedLoggingConfig,
-} from './types'
+  FingerprintPreset,
+  IHttpClientConfig,
+  IHttpResponse,
+  IProxyConfig,
+  IRequestConfig,
+  ISessionConfig,
+} from './core/types'
+import {
+  AcceptChTracker,
+  RefererPolicy,
+  executeWithBlockRetry,
+  extractCfClearance,
+} from './anti-detect'
+import { handleChallenge } from './challenge'
+import { NetworkError, TimeoutError } from './core/errors'
+import { formatProxyUrl } from './core/proxy'
+import { buildSecFetchHeaders } from './fingerprint/header-generator'
+import { SessionManager } from './session'
+
+const DEFAULT_SESSION_ID = '__default__'
+const DEFAULT_TIMEOUT_MS = 30_000
+const DEFAULT_BLOCK_RETRIES = 2
 
 /**
- * HTTP client with proxy support, fingerprint evasion, and interceptors.
+ * HTTP client with TLS/HTTP2 fingerprint impersonation.
+ * Uses tlsclientwrapper (bogdanfinn/tls-client FFI) for browser-grade fingerprints.
  */
-export class HttpClient extends BaseClass {
-  private readonly client: AxiosInstance
-  private _proxy?: ProxyConfig
-  private _fingerprintConfig?: FingerprintConfig
+export class HttpClient {
+  private readonly config: IHttpClientConfig
+  private readonly sessionManager: SessionManager
+  private readonly refererPolicy = new RefererPolicy()
+  private readonly acceptChTracker = new AcceptChTracker()
+  private initPromise: Promise<void> | null = null
 
-  constructor(config: HttpClientConfig) {
-    super()
-    this._proxy = config.proxy
-    this._fingerprintConfig = config.fingerprint
+  constructor(config: IHttpClientConfig = {}) {
+    this.config = config
+    this.sessionManager = new SessionManager(config.maxThreads ?? 4)
+  }
 
-    // Resolve logging config with defaults
-    const loggingConfig: ResolvedLoggingConfig = {
-      logRequests: false,
-      logResponses: false,
-      logErrors: true,
-      logPerformance: false,
-      logger: this.logger,
-      ...config.logging,
+  // ─── HTTP Methods ──────────────────────────────────────────
+
+  async get<T = string>(url: string, config?: IRequestConfig): Promise<IHttpResponse<T>> {
+    return this.request<T>('GET', url, undefined, config)
+  }
+
+  async post<T = string>(
+    url: string,
+    data?: unknown,
+    config?: IRequestConfig,
+  ): Promise<IHttpResponse<T>> {
+    return this.request<T>('POST', url, data, config)
+  }
+
+  async put<T = string>(
+    url: string,
+    data?: unknown,
+    config?: IRequestConfig,
+  ): Promise<IHttpResponse<T>> {
+    return this.request<T>('PUT', url, data, config)
+  }
+
+  async patch<T = string>(
+    url: string,
+    data?: unknown,
+    config?: IRequestConfig,
+  ): Promise<IHttpResponse<T>> {
+    return this.request<T>('PATCH', url, data, config)
+  }
+
+  async delete<T = string>(url: string, config?: IRequestConfig): Promise<IHttpResponse<T>> {
+    return this.request<T>('DELETE', url, undefined, config)
+  }
+
+  async head(url: string, config?: IRequestConfig): Promise<IHttpResponse<string>> {
+    return this.request<string>('HEAD', url, undefined, config)
+  }
+
+  // ─── Session Management ────────────────────────────────────
+
+  async createSession(id: string, config: ISessionConfig): Promise<void> {
+    await this.sessionManager.createSession(id, config)
+  }
+
+  async destroySession(id: string): Promise<void> {
+    await this.sessionManager.destroySession(id)
+  }
+
+  async rotateProxy(sessionId: string, proxy: IProxyConfig): Promise<void> {
+    await this.sessionManager.rotateProxy(sessionId, proxy)
+  }
+
+  async rotateFingerprint(sessionId: string): Promise<void> {
+    await this.sessionManager.rotateFingerprint(sessionId)
+  }
+
+  async destroy(): Promise<void> {
+    await this.sessionManager.destroyAll()
+    this.refererPolicy.clear()
+    this.acceptChTracker.clear()
+    this.initPromise = null
+  }
+
+  get cfTracker(): SessionManager['cfTracker'] {
+    return this.sessionManager.cfTracker
+  }
+
+  getPoolStats(): ReturnType<SessionManager['getPoolStats']> {
+    return this.sessionManager.getPoolStats()
+  }
+
+  getTimezone(sessionId?: string): string | undefined {
+    return this.sessionManager.getTimezone(sessionId ?? DEFAULT_SESSION_ID)
+  }
+
+  // ─── Internal ──────────────────────────────────────────────
+
+  private ensureDefaultSession(): Promise<void> {
+    if (!this.initPromise) {
+      this.initPromise = this.sessionManager
+        .createSession(DEFAULT_SESSION_ID, {
+          profile: this.config.fingerprint,
+          proxy: this.config.proxy,
+          timeout: this.config.timeout ?? DEFAULT_TIMEOUT_MS,
+        })
+        .then(() => {})
+    }
+    return this.initPromise!
+  }
+
+  private async request<T>(
+    method: string,
+    url: string,
+    data?: unknown,
+    config?: IRequestConfig,
+  ): Promise<IHttpResponse<T>> {
+    const sessionId = config?.sessionId ?? DEFAULT_SESSION_ID
+
+    if (sessionId === DEFAULT_SESSION_ID) {
+      await this.ensureDefaultSession()
     }
 
-    // Create axios instance
-    this.client = axios.create(this.buildAxiosConfig(config))
+    const fullUrl = this.config.baseURL ? `${this.config.baseURL}${url}` : url
 
-    // Setup interceptors
-    setupInterceptors(this.client, config, loggingConfig)
-  }
+    const solver = this.config.challengeSolver
+    const proxyUrl = this.config.proxy ? formatProxyUrl(this.config.proxy) : undefined
 
-  // ==================== HTTP Methods ====================
-
-  /** GET request */
-  async get<T = unknown>(
-    url: string,
-    config?: AxiosRequestConfig,
-    progress?: ProgressCallbacks,
-  ): Promise<T> {
-    const response = await this.client.get<T>(url, this.withProgress(config, progress))
-    return response.data
-  }
-
-  /** POST request */
-  async post<T = unknown, D = unknown>(
-    url: string,
-    data?: D,
-    config?: AxiosRequestConfig,
-    progress?: ProgressCallbacks,
-  ): Promise<T> {
-    const response = await this.client.post<T>(url, data, this.withProgress(config, progress))
-    return response.data
-  }
-
-  /** PUT request */
-  async put<T = unknown, D = unknown>(
-    url: string,
-    data?: D,
-    config?: AxiosRequestConfig,
-    progress?: ProgressCallbacks,
-  ): Promise<T> {
-    const response = await this.client.put<T>(url, data, this.withProgress(config, progress))
-    return response.data
-  }
-
-  /** PATCH request */
-  async patch<T = unknown, D = unknown>(
-    url: string,
-    data?: D,
-    config?: AxiosRequestConfig,
-    progress?: ProgressCallbacks,
-  ): Promise<T> {
-    const response = await this.client.patch<T>(url, data, this.withProgress(config, progress))
-    return response.data
-  }
-
-  /** DELETE request */
-  async delete<T = unknown>(
-    url: string,
-    config?: AxiosRequestConfig,
-    progress?: ProgressCallbacks,
-  ): Promise<T> {
-    const response = await this.client.delete<T>(url, this.withProgress(config, progress))
-    return response.data
-  }
-
-  /** Custom request */
-  async request<T = unknown>(config: AxiosRequestConfig, progress?: ProgressCallbacks): Promise<T> {
-    const response = await this.client.request<T>(this.withProgress(config, progress))
-    return response.data
-  }
-
-  // ==================== Proxy Methods ====================
-
-  /** Set proxy at runtime */
-  setProxy(proxy: ProxyConfig): void {
-    this._proxy = proxy
-    const agents = createProxyAgents(proxy)
-    this.client.defaults.httpAgent = agents.httpAgent
-    this.client.defaults.httpsAgent = agents.httpsAgent
-  }
-
-  /** Remove proxy */
-  removeProxy(): void {
-    this._proxy = undefined
-    this.client.defaults.httpAgent = undefined
-    this.client.defaults.httpsAgent = undefined
-  }
-
-  /** Get current proxy config */
-  getProxy(): ProxyConfig | undefined {
-    return this._proxy
-  }
-
-  /** Check if proxy is configured */
-  hasProxy(): boolean {
-    return this._proxy !== undefined
-  }
-
-  // ==================== Fingerprint Methods ====================
-
-  /** Get current fingerprint config */
-  getFingerprintConfig(): FingerprintConfig | undefined {
-    return this._fingerprintConfig
-  }
-
-  /** Generate new browser headers (useful for rotation) */
-  generateBrowserHeaders(): BrowserHeaders | undefined {
-    if (!this._fingerprintConfig?.enabled && !this._fingerprintConfig?.preset) {
-      return undefined
-    }
-    return generateHeaders(this._fingerprintConfig)
-  }
-
-  /** Update fingerprint headers (for rotation between requests) */
-  rotateFingerprintHeaders(): void {
-    const headers = this.generateBrowserHeaders()
-    if (headers) {
-      this.applyBrowserHeaders(headers)
-    }
-  }
-
-  // ==================== Utility Methods ====================
-
-  /** Get underlying Axios instance */
-  getAxiosInstance(): AxiosInstance {
-    return this.client
-  }
-
-  /** Set request headers */
-  setHeaders(headers: Record<string, string | number | boolean>): void {
-    for (const [key, value] of Object.entries(headers)) {
-      this.client.defaults.headers.common[key] = String(value)
-    }
-  }
-
-  /** Remove a header */
-  removeHeader(key: string): void {
-    delete this.client.defaults.headers.common[key]
-  }
-
-  /** Set request timeout */
-  setTimeout(timeout: number): void {
-    this.client.defaults.timeout = timeout
-  }
-
-  // ==================== Private Methods ====================
-
-  /** Build axios config from HttpClientConfig */
-  private buildAxiosConfig(config: HttpClientConfig): Record<string, unknown> {
-    // Generate fingerprint headers if enabled
-    let fingerprintHeaders: Record<string, string> = {}
-    if (config.fingerprint?.enabled || config.fingerprint?.preset) {
-      const browserHeaders = generateHeaders(config.fingerprint)
-      fingerprintHeaders = this.convertBrowserHeaders(browserHeaders)
-    }
-
-    const axiosConfig: Record<string, unknown> = {
-      baseURL: config.baseURL,
-      timeout: config.timeout || 30000,
-      headers: {
-        // Fingerprint headers first (can be overridden by user)
-        ...fingerprintHeaders,
-        // Default content-type (can be overridden)
-        'Content-Type': 'application/json',
-        // User headers last (highest priority)
-        ...config.headers,
+    return executeWithBlockRetry<T>(
+      {
+        executeFn: () => this.executeRequest<T>(method, fullUrl, data, config, sessionId),
+        rotateFn: () => this.sessionManager.rotateFingerprint(sessionId).then(() => {}),
+        maxRetries: this.config.blockRetries ?? DEFAULT_BLOCK_RETRIES,
+        onSuccess: (result) => {
+          extractCfClearance(sessionId, result.cookies, this.sessionManager.cfTracker)
+          this.acceptChTracker.processResponse(fullUrl, result.headers)
+          this.refererPolicy.trackUrl(sessionId, fullUrl)
+        },
+        challengeSolver: solver
+          ? async (result) => {
+            const body = typeof result.data === 'string' ? result.data : ''
+            const { solved, cfClearance } = await handleChallenge(solver, fullUrl, body, proxyUrl)
+            if (solved && cfClearance) {
+              this.sessionManager.cfTracker.setClearance(sessionId, cfClearance)
+            }
+            return solved
+          }
+          : undefined,
       },
-    }
-
-    // Add stealth agent if cipher shuffling is enabled
-    if (config.fingerprint?.shuffleCiphers) {
-      axiosConfig.httpsAgent = createStealthAgent()
-    }
-
-    // Add proxy agents if configured (overrides stealth agent for httpsAgent)
-    if (config.proxy) {
-      const agents = createProxyAgents(config.proxy)
-      axiosConfig.httpAgent = agents.httpAgent
-      axiosConfig.httpsAgent = agents.httpsAgent
-    }
-
-    return axiosConfig
+      config?.throwOnError ?? true,
+    )
   }
 
-  /** Convert BrowserHeaders to plain Record */
-  private convertBrowserHeaders(headers: BrowserHeaders): Record<string, string> {
-    const result: Record<string, string> = {}
-    for (const [key, value] of Object.entries(headers)) {
-      if (value !== undefined) {
-        result[key] = value
-      }
+  private async executeRequest<T>(
+    method: string,
+    fullUrl: string,
+    data: unknown | undefined,
+    config: IRequestConfig | undefined,
+    sessionId: string,
+  ): Promise<IHttpResponse<T>> {
+    const session = this.sessionManager.getSession(sessionId)
+    if (!session) {
+      throw new NetworkError(`[HttpClient] Session '${sessionId}' not found`)
     }
-    return result
+
+    const mergedHeaders = { ...this.config.headers, ...config?.headers }
+
+    // Referer policy
+    const referer = this.refererPolicy.getReferer(sessionId, fullUrl)
+    if (referer && !mergedHeaders.referer && !mergedHeaders.Referer) {
+      mergedHeaders.referer = referer
+    }
+
+    // Dynamic sec-fetch-* per request context (always applied — simulates real user behavior)
+    Object.assign(mergedHeaders, buildSecFetchHeaders(config?.context))
+
+    // Accept-CH high-entropy Client Hints (fixed: use actual majorVersion from session headers)
+    const secChUa = mergedHeaders['sec-ch-ua'] ?? ''
+    const majorVersion = this.extractMajorFromSecChUa(secChUa)
+    Object.assign(
+      mergedHeaders,
+      this.acceptChTracker.getHeaders(fullUrl, majorVersion, secChUa, '15.0.0'),
+    )
+
+    if (data && typeof data === 'object') {
+      mergedHeaders['content-type'] ??= 'application/json'
+    }
+
+    const tlsOptions = {
+      headers: Object.keys(mergedHeaders).length > 0 ? mergedHeaders : undefined,
+      requestCookies: config?.cookies,
+      followRedirects: config?.followRedirects ?? true,
+      timeoutSeconds: config?.timeout ? Math.ceil(config.timeout / 1000) : undefined,
+      ...config?.tlsOptions,
+    }
+
+    this.config.hooks?.onRequest?.({ method, url: fullUrl, sessionId, headers: mergedHeaders })
+
+    const startTime = Date.now()
+    let response: TlsClientResponse
+
+    try {
+      response = await this.sendRequest(session, method, fullUrl, data, tlsOptions)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      const wrapped
+        = message.includes('timeout') || message.includes('Timeout')
+          ? new TimeoutError(
+            `[HttpClient] Request timed out for ${fullUrl}`,
+            config?.timeout ?? DEFAULT_TIMEOUT_MS,
+          )
+          : new NetworkError(`[HttpClient] Network error for ${fullUrl}: ${message}`)
+      this.config.hooks?.onError?.({ method, url: fullUrl, sessionId, error: wrapped })
+      throw wrapped
+    }
+
+    const duration = Date.now() - startTime
+    this.config.hooks?.onResponse?.({
+      method,
+      url: fullUrl,
+      sessionId,
+      status: response.status,
+      duration,
+      headers: response.headers,
+    })
+
+    return {
+      status: response.status,
+      headers: response.headers,
+      data: this.parseBody<T>(response.body, response.headers),
+      cookies: response.cookies,
+      usedProtocol: response.usedProtocol,
+      retryCount: response.retryCount,
+      duration,
+    }
   }
 
-  /** Apply browser headers to client defaults */
-  private applyBrowserHeaders(headers: BrowserHeaders): void {
-    const converted = this.convertBrowserHeaders(headers)
-    for (const [key, value] of Object.entries(converted)) {
-      this.client.defaults.headers.common[key] = value
+  private async sendRequest(
+    session: SessionClient,
+    method: string,
+    url: string,
+    data: unknown | undefined,
+    options: Record<string, unknown>,
+  ): Promise<TlsClientResponse> {
+    switch (method) {
+      case 'POST':
+        return session.post(url, data as string | object | null, options)
+      case 'PUT':
+        return session.put(url, data as string | object | null, options)
+      case 'PATCH':
+        return session.patch(url, data as string | object | null, options)
+      case 'DELETE':
+        return session.delete(url, options)
+      case 'HEAD':
+        return session.head(url, options)
+      default:
+        return session.get(url, options)
     }
   }
 
-  /** Enhance config with progress callbacks */
-  private withProgress(
-    config: AxiosRequestConfig = {},
-    progress?: ProgressCallbacks,
-  ): AxiosRequestConfig {
-    if (!progress) {
-      return config
-    }
+  private extractMajorFromSecChUa(secChUa: string): number {
+    const match = /v="(\d+)"/.exec(secChUa)
+    return match ? Number(match[1]) : 0
+  }
 
-    const enhanced = { ...config }
-
-    if (progress.onUploadProgress) {
-      enhanced.onUploadProgress = (e) => {
-        const total = e.total || 0
-        const percentage = total > 0 ? Math.round((e.loaded * 100) / total) : 0
-        const event: ProgressEvent = { loaded: e.loaded, total, percentage }
-        progress.onUploadProgress?.(event)
+  private parseBody<T>(body: string, headers: Record<string, string>): T {
+    const ct = headers['content-type'] ?? headers['Content-Type'] ?? ''
+    if (ct.includes('application/json')) {
+      try {
+        return JSON.parse(body) as T
+      } catch {
+        return body as T
       }
     }
+    return body as T
+  }
+}
 
-    if (progress.onDownloadProgress) {
-      enhanced.onDownloadProgress = (e) => {
-        const total = e.total || 0
-        const percentage = total > 0 ? Math.round((e.loaded * 100) / total) : 0
-        const event: ProgressEvent = { loaded: e.loaded, total, percentage }
-        progress.onDownloadProgress?.(event)
-      }
+export function createHttpClient(config?: IHttpClientConfig): HttpClient {
+  return new HttpClient(config)
+}
+
+export async function quickFetch<T = string>(
+  url: string,
+  options?: {
+    method?: string
+    data?: unknown
+    preset?: FingerprintPreset
+    proxy?: IProxyConfig
+    headers?: Record<string, string>
+    timeout?: number
+    throwOnError?: boolean
+  },
+): Promise<IHttpResponse<T>> {
+  const client = new HttpClient({
+    fingerprint: options?.preset ? { preset: options.preset } : undefined,
+    proxy: options?.proxy,
+    headers: options?.headers,
+    timeout: options?.timeout,
+  })
+
+  try {
+    const requestConfig: IRequestConfig = { throwOnError: options?.throwOnError }
+    const method = options?.method?.toUpperCase() ?? 'GET'
+    switch (method) {
+      case 'POST':
+        return await client.post<T>(url, options?.data, requestConfig)
+      case 'PUT':
+        return await client.put<T>(url, options?.data, requestConfig)
+      case 'PATCH':
+        return await client.patch<T>(url, options?.data, requestConfig)
+      case 'DELETE':
+        return await client.delete<T>(url, requestConfig)
+      default:
+        return await client.get<T>(url, requestConfig)
     }
-
-    return enhanced
+  } finally {
+    await client.destroy()
   }
 }
