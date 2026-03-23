@@ -1,7 +1,7 @@
 {
   "name": "@vitechgroup/base-factory",
   "type": "module",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "lastUpdated": "19/03/2026",
   "private": true,
   "packageManager": "yarn@1.22.22",
