@@ -1,60 +1,60 @@
-name-template: 'v$RESOLVED_VERSION'
-tag-template: 'v$RESOLVED_VERSION'
+# name-template: 'v$RESOLVED_VERSION'
+# tag-template: 'v$RESOLVED_VERSION'
 
-categories:
-  - title: '🚀 Features'
-    labels:
-      - 'feature'
-      - 'frontend'
-      - 'backend'
-  - title: '🐛 Bug Fixes'
-    labels:
-      - 'fix'
-      - 'bugfix'
-  - title: '🗄️ Database'
-    labels:
-      - 'database'
-  - title: '🔌 IPC Changes'
-    labels:
-      - 'ipc'
-  - title: '🧩 Core Module'
-    labels:
-      - 'mkt-core'
-  - title: '⚡ Worker'
-    labels:
-      - 'worker'
-  - title: '📖 Documentation'
-    labels:
-      - 'docs'
-  - title: '🔧 Configuration'
-    labels:
-      - 'config'
-      - 'ci'
-  - title: '🏗️ Other'
-    labels:
-      - 'preload'
+# categories:
+#   - title: '🚀 Features'
+#     labels:
+#       - 'feature'
+#       - 'frontend'
+#       - 'backend'
+#   - title: '🐛 Bug Fixes'
+#     labels:
+#       - 'fix'
+#       - 'bugfix'
+#   - title: '🗄️ Database'
+#     labels:
+#       - 'database'
+#   - title: '🔌 IPC Changes'
+#     labels:
+#       - 'ipc'
+#   - title: '🧩 Core Module'
+#     labels:
+#       - 'mkt-core'
+#   - title: '⚡ Worker'
+#     labels:
+#       - 'worker'
+#   - title: '📖 Documentation'
+#     labels:
+#       - 'docs'
+#   - title: '🔧 Configuration'
+#     labels:
+#       - 'config'
+#       - 'ci'
+#   - title: '🏗️ Other'
+#     labels:
+#       - 'preload'
 
-change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
-change-title-escapes: '\<*_&'
+# change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+# change-title-escapes: '\<*_&'
 
-version-resolver:
-  major:
-    labels:
-      - 'breaking'
-  minor:
-    labels:
-      - 'feature'
-  patch:
-    labels:
-      - 'fix'
-      - 'bugfix'
-      - 'docs'
-      - 'config'
-  default: patch
+# version-resolver:
+#   major:
+#     labels:
+#       - 'breaking'
+#   minor:
+#     labels:
+#       - 'feature'
+#   patch:
+#     labels:
+#       - 'fix'
+#       - 'bugfix'
+#       - 'docs'
+#       - 'config'
+#   default: patch
 
-template: |
-  ## What's Changed
+# template: |
+#   ## What's Changed
 
-  $CHANGES
+#   $CHANGES
 
-  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+#   **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION

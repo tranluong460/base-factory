@@ -1,82 +1,82 @@
-# Config for actions/labeler — labels PRs based on changed files
-# Generic config reusable across multiple projects
-# Labels only apply if matching files exist in the repo
+# # Config for actions/labeler — labels PRs based on changed files
+# # Generic config reusable across multiple projects
+# # Labels only apply if matching files exist in the repo
 
-# ──────────────────────────────────────────────
-# Generic (all projects)
-# ──────────────────────────────────────────────
+# # ──────────────────────────────────────────────
+# # Generic (all projects)
+# # ──────────────────────────────────────────────
 
-source:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'src/**'
+# source:
+#   - changed-files:
+#       - any-glob-to-any-file:
+#           - 'src/**'
 
-docs:
-  - changed-files:
-      - any-glob-to-any-file:
-          - '**/*.md'
-          - 'docs/**'
+# docs:
+#   - changed-files:
+#       - any-glob-to-any-file:
+#           - '**/*.md'
+#           - 'docs/**'
 
-config:
-  - changed-files:
-      - any-glob-to-any-file:
-          - '*.json'
-          - '*.yml'
-          - '*.yaml'
-          - '*.config.*'
-          - '.eslintrc*'
-          - '.prettierrc*'
+# config:
+#   - changed-files:
+#       - any-glob-to-any-file:
+#           - '*.json'
+#           - '*.yml'
+#           - '*.yaml'
+#           - '*.config.*'
+#           - '.eslintrc*'
+#           - '.prettierrc*'
 
-ci:
-  - changed-files:
-      - any-glob-to-any-file:
-          - '.github/**'
+# ci:
+#   - changed-files:
+#       - any-glob-to-any-file:
+#           - '.github/**'
 
-tests:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'test/**'
-          - 'tests/**'
-          - '**/*.test.*'
-          - '**/*.spec.*'
+# tests:
+#   - changed-files:
+#       - any-glob-to-any-file:
+#           - 'test/**'
+#           - 'tests/**'
+#           - '**/*.test.*'
+#           - '**/*.spec.*'
 
-build:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'vite.config.*'
-          - 'webpack.config.*'
-          - 'rollup.config.*'
-          - 'tsconfig*.json'
-          - 'build/**'
-          - 'Dockerfile*'
-          - 'docker-compose*'
+# build:
+#   - changed-files:
+#       - any-glob-to-any-file:
+#           - 'vite.config.*'
+#           - 'webpack.config.*'
+#           - 'rollup.config.*'
+#           - 'tsconfig*.json'
+#           - 'build/**'
+#           - 'Dockerfile*'
+#           - 'docker-compose*'
 
-# ──────────────────────────────────────────────
-# Electron app (mkt-care, etc.)
-# Only triggers if the repo has these directories
-# ──────────────────────────────────────────────
+# # ──────────────────────────────────────────────
+# # Electron app (mkt-care, etc.)
+# # Only triggers if the repo has these directories
+# # ──────────────────────────────────────────────
 
-main:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'src/main/**'
+# main:
+#   - changed-files:
+#       - any-glob-to-any-file:
+#           - 'src/main/**'
 
-renderer:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'src/renderer/**'
+# renderer:
+#   - changed-files:
+#       - any-glob-to-any-file:
+#           - 'src/renderer/**'
 
-preload:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'src/preload/**'
+# preload:
+#   - changed-files:
+#       - any-glob-to-any-file:
+#           - 'src/preload/**'
 
-database:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'src/main/database/**'
+# database:
+#   - changed-files:
+#       - any-glob-to-any-file:
+#           - 'src/main/database/**'
 
-worker:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'src/main/nodejs/worker/**'
+# worker:
+#   - changed-files:
+#       - any-glob-to-any-file:
+#           - 'src/main/nodejs/worker/**'
