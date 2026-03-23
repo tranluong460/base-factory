@@ -16,7 +16,7 @@ export class LabsBaseClass extends BaseClass {
   protected async logUpdate(
     key: string,
     params: (string | number)[] = [],
-    success?: boolean
+    success?: boolean,
   ): Promise<void> {
     const fullParams = [this.payload.keyTarget, ...params].filter((p) => p !== '')
 
