@@ -11,6 +11,7 @@ export default antfu(
       'example',
       'node_modules',
       '**/*.md',
+      'scripts',
     ],
   },
   {
