@@ -219,7 +219,7 @@ docker-compose.override.yml
 .dev.vars
 
 # AI / LLM tools
-.claude/
+# .claude/
 .cursor/
 .aider*
 .copilot/
