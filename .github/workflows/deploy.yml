@@ -1,86 +1,97 @@
-name: Update Version and Sync to Prod
+# name: Update Version and Sync to Prod
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+# on:
+#   push:
+#     branches:
+#       - main
+#   workflow_dispatch:
 
-jobs:
-  # JOB 1: Tăng version và cập nhật ngày tháng trên nhánh main
-  bump-version:
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout 🛎️
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+# jobs:
+#   # JOB 1: Tăng version và cập nhật ngày tháng trên nhánh main
+#   bump-version:
+#     if: "!contains(github.event.head_commit.message, '[skip ci]')"
+#     runs-on: ubuntu-latest
+#     permissions:
+#       contents: write
+#     steps:
+#       - name: Checkout 🛎️
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
 
-      - name: Update package.json 🆙
-        id: update_pkg
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+#       - name: Update package.json 🆙
+#         id: update_pkg
+#         run: |
+#           git config --global user.name "github-actions[bot]"
+#           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Tăng version
-          npm version patch --no-git-tag-version
+#           # Tăng version (smart bump: patch>=9 → minor, minor>=9 & patch>=9 → major)
+#           CURRENT_VER=$(jq -r .version package.json)
+#           MAJOR=$(echo "$CURRENT_VER" | cut -d. -f1)
+#           MINOR=$(echo "$CURRENT_VER" | cut -d. -f2)
+#           PATCH=$(echo "$CURRENT_VER" | cut -d. -f3)
 
-          # Cập nhật lastUpdated
-          CURRENT_DATE=$(TZ='Asia/Ho_Chi_Minh' date +'%d/%m/%Y')
-          jq ".lastUpdated = \"$CURRENT_DATE\"" package.json > temp.json && mv temp.json package.json
+#           if [ "$MINOR" -ge 9 ] && [ "$PATCH" -ge 9 ]; then
+#             npm version major --no-git-tag-version
+#           elif [ "$PATCH" -ge 9 ]; then
+#             npm version minor --no-git-tag-version
+#           else
+#             npm version patch --no-git-tag-version
+#           fi
 
-          # Lưu version mới
-          NEW_VER=$(jq -r .version package.json)
-          echo "VERSION=$NEW_VER" >> $GITHUB_OUTPUT
+#           # Cập nhật lastUpdated
+#           CURRENT_DATE=$(TZ='Asia/Ho_Chi_Minh' date +'%d/%m/%Y')
+#           jq ".lastUpdated = \"$CURRENT_DATE\"" package.json > temp.json && mv temp.json package.json
 
-          git add package.json
-          git commit -m "chore: bump version to $NEW_VER [skip ci]"
-          git push origin main
+#           # Lưu version mới
+#           NEW_VER=$(jq -r .version package.json)
+#           echo "VERSION=$NEW_VER" >> $GITHUB_OUTPUT
 
-  # JOB 2: Copy dist và các file liên quan sang nhánh prod
-  deploy-prod:
-    needs: bump-version
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout 🛎️
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
+#           git add package.json
+#           git commit -m "chore: bump version to $NEW_VER [skip ci]"
+#           git push origin main
 
-      # Đợi commit mới nhất available
-      - name: Pull latest
-        run: git pull origin main
+#   # JOB 2: Copy dist và các file liên quan sang nhánh prod
+#   deploy-prod:
+#     needs: bump-version
+#     runs-on: ubuntu-latest
+#     permissions:
+#       contents: write
+#     steps:
+#       - name: Checkout 🛎️
+#         uses: actions/checkout@v4
+#         with:
+#           ref: main
+#           fetch-depth: 0
 
-      # Lấy version để dùng làm commit message
-      - name: Get Version
-        id: get_version
-        run: |
-          VERSION=$(jq -r .version package.json)
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+#       # Đợi commit mới nhất available
+#       - name: Pull latest
+#         run: git pull origin main
 
-      - name: Prepare Prod Folder 📂
-        run: |
-          mkdir -p out/dist
+#       # Lấy version để dùng làm commit message
+#       - name: Get Version
+#         id: get_version
+#         run: |
+#           VERSION=$(jq -r .version package.json)
+#           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
-          if [ -d "dist" ]; then cp -r dist/* out/dist/; fi
+#       - name: Prepare Prod Folder 📂
+#         run: |
+#           mkdir -p out/dist
 
-          cp package.json out/
-          cp README.md out/
-          cp LICENSE out/ || echo "No LICENSE found"
-          cp .gitignore out/
+#           if [ -d "dist" ]; then cp -r dist/* out/dist/; fi
 
-          if [ -d "docs" ]; then cp -r docs out/docs; fi
+#           cp package.json out/
+#           cp README.md out/
+#           cp LICENSE out/ || echo "No LICENSE found"
+#           cp .gitignore out/
 
-      - name: Deploy to Prod Branch 🚀
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: out
-          branch: prod
-          clean: true
-          commit-message: ${{ steps.get_version.outputs.VERSION }}
+#           if [ -d "docs" ]; then cp -r docs out/docs; fi
+
+#       - name: Deploy to Prod Branch 🚀
+#         uses: JamesIves/github-pages-deploy-action@v4
+#         with:
+#           folder: out
+#           branch: prod
+#           clean: true
+#           commit-message: ${{ steps.get_version.outputs.VERSION }}

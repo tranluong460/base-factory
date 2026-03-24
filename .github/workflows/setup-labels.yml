@@ -1,90 +1,90 @@
-name: Setup Labels
+# name: Setup Labels
 
-on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/setup-labels.yml'
+# on:
+#   push:
+#     branches: [main]
+#     paths:
+#       - '.github/workflows/setup-labels.yml'
 
-jobs:
-  create-labels:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Create/Update labels
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const labels = [
-              // By changed files — Generic (all projects)
-              // 🟢 xanh lá (an toàn) → 🔵 xanh dương → 🟡 vàng → 🟠 cam → 🔴 đỏ (nguy hiểm)
-              { name: 'docs', color: '0e8a16', description: 'Documentation changes' },
-              { name: 'tests', color: '1d76db', description: 'Test file changes' },
-              { name: 'config', color: 'e4e669', description: 'Configuration changes' },
-              { name: 'source', color: 'f9a825', description: 'Changes in source code' },
-              { name: 'build', color: 'e36209', description: 'Build system changes' },
-              { name: 'ci', color: 'd93f0b', description: 'CI/CD workflow changes' },
+# jobs:
+#   create-labels:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Create/Update labels
+#         uses: actions/github-script@v7
+#         with:
+#           script: |
+#             const labels = [
+#               // By changed files — Generic (all projects)
+#               // 🟢 xanh lá (an toàn) → 🔵 xanh dương → 🟡 vàng → 🟠 cam → 🔴 đỏ (nguy hiểm)
+#               { name: 'docs', color: '0e8a16', description: 'Documentation changes' },
+#               { name: 'tests', color: '1d76db', description: 'Test file changes' },
+#               { name: 'config', color: 'e4e669', description: 'Configuration changes' },
+#               { name: 'source', color: 'f9a825', description: 'Changes in source code' },
+#               { name: 'build', color: 'e36209', description: 'Build system changes' },
+#               { name: 'ci', color: 'd93f0b', description: 'CI/CD workflow changes' },
 
-              // By changed files — Electron app (mkt-care, etc.)
-              // 🟢 → 🔵 → 🟡 → 🟠 → 🔴
-              { name: 'renderer', color: '1d76db', description: 'Changes in src/renderer/' },
-              { name: 'preload', color: '0e8a16', description: 'Changes in src/preload/' },
-              { name: 'main', color: 'f9a825', description: 'Changes in src/main/' },
-              { name: 'database', color: 'e36209', description: 'Changes in database entities/models' },
-              { name: 'worker', color: 'd93f0b', description: 'Changes in worker threads' },
+#               // By changed files — Electron app (mkt-care, etc.)
+#               // 🟢 → 🔵 → 🟡 → 🟠 → 🔴
+#               { name: 'renderer', color: '1d76db', description: 'Changes in src/renderer/' },
+#               { name: 'preload', color: '0e8a16', description: 'Changes in src/preload/' },
+#               { name: 'main', color: 'f9a825', description: 'Changes in src/main/' },
+#               { name: 'database', color: 'e36209', description: 'Changes in database entities/models' },
+#               { name: 'worker', color: 'd93f0b', description: 'Changes in worker threads' },
 
-              // By size — gradient: 🟢 xanh → 🟡 vàng → 🟠 cam → 🔴 đỏ → ⚫ đỏ đậm
-              { name: 'size/XS', color: '0e8a16', description: '< 10 lines changed' },
-              { name: 'size/S', color: '5D9801', description: '< 50 lines changed' },
-              { name: 'size/M', color: 'e4e669', description: '< 200 lines changed' },
-              { name: 'size/L', color: 'e36209', description: '< 500 lines changed' },
-              { name: 'size/XL', color: 'd93f0b', description: '500–999 lines changed' },
-              { name: 'size/XXL', color: 'b60205', description: '1000–1999 lines changed' },
-              { name: 'size/XXXL', color: '6f0000', description: '2000+ lines changed' },
+#               // By size — gradient: 🟢 xanh → 🟡 vàng → 🟠 cam → 🔴 đỏ → ⚫ đỏ đậm
+#               { name: 'size/XS', color: '0e8a16', description: '< 10 lines changed' },
+#               { name: 'size/S', color: '5D9801', description: '< 50 lines changed' },
+#               { name: 'size/M', color: 'e4e669', description: '< 200 lines changed' },
+#               { name: 'size/L', color: 'e36209', description: '< 500 lines changed' },
+#               { name: 'size/XL', color: 'd93f0b', description: '500–999 lines changed' },
+#               { name: 'size/XXL', color: 'b60205', description: '1000–1999 lines changed' },
+#               { name: 'size/XXXL', color: '6f0000', description: '2000+ lines changed' },
 
-              // By type — gradient theo mức độ impact: thấp → cao
-              // 🟢 nhẹ (docs/test/chore) → 🔵 trung bình (refactor/feature) → 🔴 cao (bugfix/hotfix)
-              { name: 'type/docs', color: '0e8a16', description: 'Documentation only' },
-              { name: 'type/test', color: '1d76db', description: 'Test only changes' },
-              { name: 'type/chore', color: 'e4e669', description: 'Maintenance tasks' },
-              { name: 'type/refactor', color: 'f9a825', description: 'Code refactoring' },
-              { name: 'type/feature', color: 'e36209', description: 'New feature' },
-              { name: 'type/bugfix', color: 'd93f0b', description: 'Bug fix' },
-              { name: 'type/hotfix', color: 'b60205', description: 'Urgent fix for production' },
+#               // By type — gradient theo mức độ impact: thấp → cao
+#               // 🟢 nhẹ (docs/test/chore) → 🔵 trung bình (refactor/feature) → 🔴 cao (bugfix/hotfix)
+#               { name: 'type/docs', color: '0e8a16', description: 'Documentation only' },
+#               { name: 'type/test', color: '1d76db', description: 'Test only changes' },
+#               { name: 'type/chore', color: 'e4e669', description: 'Maintenance tasks' },
+#               { name: 'type/refactor', color: 'f9a825', description: 'Code refactoring' },
+#               { name: 'type/feature', color: 'e36209', description: 'New feature' },
+#               { name: 'type/bugfix', color: 'd93f0b', description: 'Bug fix' },
+#               { name: 'type/hotfix', color: 'b60205', description: 'Urgent fix for production' },
 
-              // By priority — gradient: 🟢 thấp → 🟠 cao → 🔴 critical
-              { name: 'priority/low', color: '0e8a16', description: 'Low priority' },
-              { name: 'priority/high', color: 'e36209', description: 'High priority' },
-              { name: 'priority/critical', color: 'b60205', description: 'Must merge ASAP' },
+#               // By priority — gradient: 🟢 thấp → 🟠 cao → 🔴 critical
+#               { name: 'priority/low', color: '0e8a16', description: 'Low priority' },
+#               { name: 'priority/high', color: 'e36209', description: 'High priority' },
+#               { name: 'priority/critical', color: 'b60205', description: 'Must merge ASAP' },
 
-              // By review status — gradient: 🟡 chờ → 🟠 cần sửa → 🟢 OK
-              { name: 'needs-review', color: 'e4e669', description: 'Waiting for review' },
-              { name: 'changes-requested', color: 'e36209', description: 'Reviewer requested changes' },
-              { name: 'approved', color: '0e8a16', description: 'Approved and ready to merge' },
+#               // By review status — gradient: 🟡 chờ → 🟠 cần sửa → 🟢 OK
+#               { name: 'needs-review', color: 'e4e669', description: 'Waiting for review' },
+#               { name: 'changes-requested', color: 'e36209', description: 'Reviewer requested changes' },
+#               { name: 'approved', color: '0e8a16', description: 'Approved and ready to merge' },
 
-              // Special — đỏ = nguy hiểm, xanh dương = thông tin
-              { name: 'breaking-change', color: 'b60205', description: 'Contains breaking changes' },
-              { name: 'dependencies', color: '1d76db', description: 'Dependency updates' },
-              { name: 'do-not-merge', color: '6f0000', description: 'Do not merge this PR' },
-            ];
+#               // Special — đỏ = nguy hiểm, xanh dương = thông tin
+#               { name: 'breaking-change', color: 'b60205', description: 'Contains breaking changes' },
+#               { name: 'dependencies', color: '1d76db', description: 'Dependency updates' },
+#               { name: 'do-not-merge', color: '6f0000', description: 'Do not merge this PR' },
+#             ];
 
-            for (const label of labels) {
-              try {
-                await github.rest.issues.updateLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  name: label.name,
-                  color: label.color,
-                  description: label.description,
-                });
-                console.log(`Updated: ${label.name}`);
-              } catch {
-                await github.rest.issues.createLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  name: label.name,
-                  color: label.color,
-                  description: label.description,
-                });
-                console.log(`Created: ${label.name}`);
-              }
-            }
+#             for (const label of labels) {
+#               try {
+#                 await github.rest.issues.updateLabel({
+#                   owner: context.repo.owner,
+#                   repo: context.repo.repo,
+#                   name: label.name,
+#                   color: label.color,
+#                   description: label.description,
+#                 });
+#                 console.log(`Updated: ${label.name}`);
+#               } catch {
+#                 await github.rest.issues.createLabel({
+#                   owner: context.repo.owner,
+#                   repo: context.repo.repo,
+#                   name: label.name,
+#                   color: label.color,
+#                   description: label.description,
+#                 });
+#                 console.log(`Created: ${label.name}`);
+#               }
+#             }
